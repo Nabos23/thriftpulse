@@ -201,9 +201,40 @@ def get_order_by_code_sync(code: str) -> Optional[Order]:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM orders WHERE order_code = ? OR order_code = ?", (code, code.upper()))
         row = cursor.fetchone()
-        return _row_to_order(row) if row else None
+        if row:
+            return _row_to_order(row)
     finally:
         conn.close()
+
+    # Fallback to Google Sheets if SQLite was recycled
+    try:
+        from app.connectors.google_sheets import get_sheets_sync
+        sheets = get_sheets_sync()
+        rows = sheets.search_sheet(code, limit=3)
+        for r in rows:
+            if r.get("order_code", "").strip().upper() == code.strip().upper():
+                return Order(
+                    id=int(r.get("row_number") or 1),
+                    order_code=r.get("order_code", ""),
+                    created_at=str(r.get("created_at") or ""),
+                    customer_name=r.get("customer_name", ""),
+                    phone_primary=r.get("phone_primary", ""),
+                    phone_secondary=r.get("phone_secondary", ""),
+                    address=r.get("full_address", "") or r.get("city", ""),
+                    area=r.get("city", ""),
+                    city=r.get("city", ""),
+                    shoe_brand_model=r.get("shoe_brand_model", ""),
+                    shoe_size=r.get("shoe_size", ""),
+                    price=float(str(r.get("price", "0")).replace(",", "") or 0),
+                    payment_method=r.get("payment_method", "Cash on Delivery"),
+                    status=r.get("status", "Pending"),
+                    shoe_image_path=r.get("shoe_image_path", ""),
+                    invoice_path=r.get("invoice_path", ""),
+                    notes=r.get("notes", ""),
+                )
+    except Exception as e:
+        logger.error("get_order_by_code_sheet_fallback_error", error=str(e), code=code)
+    return None
 
 
 async def get_order_by_code(code: str) -> Optional[Order]:

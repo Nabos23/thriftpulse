@@ -33,10 +33,13 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
     1. Syncs order to Google Sheets
     2. Sends order card and shoe picture to owner's WhatsApp
     """
-    # Step 1: Google Sheets Sync
+    # Determine public base URL for links and sheets
+    public_base = settings.BASE_URL if ("localhost" in base_url or "127.0.0.1" in base_url) else base_url
+
+    # Step 1: Google Sheets Sync with full clickable URLs
     try:
         sheets = get_sheets_sync()
-        sync_res = sheets.append_order(order)
+        sync_res = sheets.append_order(order, base_url=public_base)
         synced = (sync_res.get("status") == "ok")
     except Exception as e:
         logger.error("sheets_sync_background_failed", error=str(e), order_code=order.order_code)
@@ -235,6 +238,21 @@ async def view_invoice(order_code: str):
     # Generate if not on disk
     from app.services.invoice_generator import generate_thermal_invoice_html
     return HTMLResponse(content=generate_thermal_invoice_html(order))
+
+
+@router.get("/static/uploads/shoes/{filename}")
+@router.get("/api/index/static/uploads/shoes/{filename}")
+async def view_shoe_photo(filename: str):
+    """Serve uploaded shoe photos when clicked in Google Sheets or browser."""
+    candidates = [
+        settings.UPLOADS_DIR / filename,
+        Path("/tmp") / "uploads" / "shoes" / filename,
+        settings.BASE_DIR / "app" / "static" / "uploads" / "shoes" / filename,
+    ]
+    for p in candidates:
+        if p.exists():
+            return FileResponse(str(p), media_type="image/jpeg")
+    raise HTTPException(status_code=404, detail="Shoe image not found")
 
 
 @router.post("/api/maintenance/shrink")

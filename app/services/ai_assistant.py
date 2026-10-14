@@ -303,7 +303,7 @@ async def execute_tool(name: str, args: dict[str, Any], base_url: str = "") -> t
             new_order.invoice_path = inv_path
 
             # Append to Google Sheet in real-time
-            sheet_res = sheets.append_order(new_order)
+            sheet_res = sheets.append_order(new_order, base_url=base_url)
 
             result_summary = {
                 "status": "success",

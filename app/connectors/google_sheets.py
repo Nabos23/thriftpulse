@@ -201,14 +201,32 @@ class GoogleSheetsSync:
         except Exception as e:
             logger.warning("sheets_ensure_headers_warning", error=str(e))
 
-    def append_order(self, order: Order) -> dict[str, Any]:
-        """Append a new order row to the Google Sheet."""
+    def append_order(self, order: Order, base_url: str = "") -> dict[str, Any]:
+        """Append a new order row to the Google Sheet with full clickable URLs."""
         if not self._spreadsheet_id:
             logger.warning("sheets_skip_no_spreadsheet_id")
             return {"status": "skipped", "reason": "no_spreadsheet_id"}
 
         try:
             headers = self._auth_headers()
+
+            # Determine public base URL for clickable links
+            b = (base_url or settings.BASE_URL).rstrip("/")
+            if ("localhost" in b or "127.0.0.1" in b) and settings.BASE_URL and "localhost" not in settings.BASE_URL:
+                b = settings.BASE_URL.rstrip("/")
+
+            # Clickable Photo URL
+            if order.shoe_image_path:
+                if order.shoe_image_path.startswith("http://") or order.shoe_image_path.startswith("https://"):
+                    photo_url = order.shoe_image_path
+                else:
+                    photo_url = f"{b}/{order.shoe_image_path.lstrip('/')}"
+            else:
+                photo_url = ""
+
+            # Clickable Invoice URL
+            invoice_url = f"{b}/invoice/{order.order_code}"
+
             row = [
                 order.order_code,
                 order.created_at,
@@ -222,8 +240,8 @@ class GoogleSheetsSync:
                 order.price,
                 order.payment_method,
                 order.status,
-                order.shoe_image_path or "",
-                order.invoice_path or "",
+                photo_url,
+                invoice_url,
                 order.notes or "",
             ]
 
