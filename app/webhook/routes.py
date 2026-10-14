@@ -8,6 +8,7 @@ WhatsApp Webhook Router for Meta Cloud API:
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
@@ -159,17 +160,27 @@ async def _handle_incoming_message(raw_msg: dict, name_map: dict[str, str], base
         reply_text = ai_response.get("reply_text") or "Details fetch ho gaye hain."
         wa.send_text(sender_phone, reply_text)
 
-        # 2. Send shoe photo if available via direct upload
-        image_url = ai_response.get("image_url")
-        if image_url:
+        # 2. Send shoe photo if available via direct binary upload to Meta
+        image_raw = ai_response.get("image_url")  # raw shoe_image_path from DB e.g. /static/uploads/shoes/shoe_abc.jpg
+        if image_raw:
             caption = ai_response.get("image_caption") or "Shoe Photo"
-            from urllib.parse import urlparse
-            path_part = urlparse(image_url).path.lstrip("/")
-            local_disk_path = settings.BASE_DIR / "app" / path_part
-            if local_disk_path.exists():
-                wa.send_image_file(sender_phone, str(local_disk_path), caption=caption)
-            else:
-                wa.send_image(sender_phone, image_url, caption=caption)
+            # Try all candidate disk paths in order
+            candidates = []
+            if image_raw.startswith("/"):
+                candidates.append(Path(image_raw))
+            # Vercel /tmp path
+            filename = Path(image_raw).name
+            candidates.append(Path("/tmp") / "uploads" / "shoes" / filename)
+            # Local dev path
+            candidates.append(settings.BASE_DIR / "app" / image_raw.lstrip("/"))
+            candidates.append(settings.UPLOADS_DIR / filename)
+
+            sent = False
+            for disk_path in candidates:
+                if disk_path.exists():
+                    wa.send_image_file(sender_phone, str(disk_path), caption=caption)
+                    sent = True
+                    break
 
     else:
         # Non-owner / Customer greeting

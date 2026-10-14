@@ -65,21 +65,36 @@ def _get_client() -> AsyncOpenAI:
 
 SYSTEM_PROMPT = """ALWAYS Reply in English, even if the human is talking in Urdu or Roman Urdu.
 You are the intelligent WhatsApp AI Assistant for "Thrifted Shoes PK", assisting the store OWNER.
-The owner messages you via WhatsApp (in English, Urdu, or Roman Urdu like "Ali k joote ki details do", "Ali ka order add karo: 03129214688, Lahore, Jordan 4 size 42, 4500 COD", "Mark TS-1001 as Shipped", "Sheet check karo").
+The owner messages you via WhatsApp (in English, Urdu, or Roman Urdu).
+
+FORMATTING RULES (CRITICAL):
+- NEVER use markdown tables (no | pipes | or |---| separators). WhatsApp does NOT render tables.
+- Use plain text with emoji labels and *bold* for field names.
+- Use line breaks between fields.
+- Do NOT include raw image file paths or invoice paths in the reply text — these are sent separately as links/files.
+- Waybill/invoice link MUST be a full URL like https://thriftpulse-kohl.vercel.app/invoice/TS-1001 — never a relative path.
+- Keep responses concise and clean.
 
 Tool Priority & Rules:
 1. DATABASE FIRST: For any general query, search, customer lookup, or order status check, ALWAYS use the local database first (`search_orders_db` or `get_recent_orders_db`).
-2. GOOGLE SHEETS ON REQUEST ONLY: ONLY call `read_google_sheet` if the owner explicitly asks to check, read, or search the "sheet", "Google Sheet", or "spreadsheet" (e.g. "sheet check karo", "search in sheet", "sheet mein dekho").
-3. ADDING ORDERS: When the owner asks to add or record an order (e.g. "Add order for Bilal...", "Bilal ka order add karo..."), ALWAYS call `add_order_to_sheet_and_db` with all extracted fields (name, phone, city, address, shoe model, size, price).
-4. ORDER CONFIRMATION: When an order is added, confirm politely with:
-   - Order Code (e.g. TS-1002)
-   - Customer Name & Phone
-   - Delivery Address & City
-   - Shoe Article & Size
-   - Amount & Payment Method
-   - 1-Tap Waybill Print Link
-5. UPDATING STATUS: When the owner asks to update order status (e.g. "Mark TS-1001 as Dispatched/Delivered/Cancelled"), use `update_order_status_in_sheet`.
-6. SINGLE MATCH: If search yields a SINGLE match, summarize customer name, phone, address, shoe, and COD price clearly along with pic of the shoe.
+2. GOOGLE SHEETS ON REQUEST ONLY: ONLY call `read_google_sheet` if the owner explicitly asks to check or read the "sheet", "Google Sheet", or "spreadsheet" (e.g. "sheet check karo", "sheet mein dekho").
+3. ADDING ORDERS: When the owner asks to add or record an order, ALWAYS call `add_order_to_sheet_and_db` with all extracted fields.
+4. ORDER CONFIRMATION: When an order is added, confirm with order code, name, phone, city, shoe, price, and the full waybill URL.
+5. UPDATING STATUS: When asked to update status (e.g. "Mark TS-1001 as Dispatched"), call `update_order_status_in_sheet`.
+6. SINGLE MATCH: When search yields ONE order, reply in this exact WhatsApp format:
+
+📦 *Order #TS-XXXX*
+━━━━━━━━━━━━━━━━━━
+👤 *Customer:* Name
+📞 *Phone:* 0312...
+🏙️ *City:* Lahore
+📍 *Address:* Full address
+👟 *Shoe:* Nike Dunk High (Size: 41)
+💵 *Amount:* PKR 4,200 (Cash on Delivery)
+📦 *Status:* Pending
+📅 *Date:* 2026-10-14 20:26
+📄 *Waybill:* https://thriftpulse-kohl.vercel.app/invoice/TS-XXXX
+📸 _(Shoe photo sent below)_
 """
 
 TOOLS = [
@@ -226,29 +241,30 @@ TOOLS = [
 
 
 def _format_order_card(order: Order, base_url: str) -> str:
-    invoice_link = f"{base_url}/invoice/{order.order_code}"
+    # Always use public base_url for invoice, never relative paths
+    public_base = base_url.rstrip("/")
+    invoice_link = f"{public_base}/invoice/{order.order_code}"
     lines = [
-        f"👟 *Order #{order.order_code}*",
+        f"📦 *Order #{order.order_code}*",
         f"━━━━━━━━━━━━━━━━━━",
         f"👤 *Customer:* {order.customer_name}",
-        f"📞 *Primary Phone:* {order.phone_primary}",
+        f"📞 *Phone:* {order.phone_primary}",
     ]
     if order.phone_secondary:
         lines.append(f"📱 *Alt Phone:* {order.phone_secondary}")
     lines.extend([
         f"🏙️ *City:* {order.city}",
         f"📍 *Address:* {order.full_address}",
-        f"👟 *Item:* {order.shoe_brand_model} (Size: {order.shoe_size})",
+        f"👟 *Shoe:* {order.shoe_brand_model} (Size: {order.shoe_size})",
         f"💵 *Amount:* PKR {order.price:,.0f} ({order.payment_method})",
         f"📦 *Status:* {order.status}",
         f"📅 *Date:* {order.created_at[:16]}",
-        f"📄 *Waybill Link:* {invoice_link}",
+        f"📄 *Waybill:* {invoice_link}",
     ])
     if order.notes:
         lines.append(f"📝 *Note:* {order.notes}")
-
     if order.shoe_image_path:
-        lines.append("\n📸 _Shoe picture sent below:_")
+        lines.append("📸 _(Shoe photo sent below)_")
     return "\n".join(lines)
 
 
@@ -451,9 +467,9 @@ async def process_owner_query(text: str, sender_phone: str, base_url: str) -> di
             if len(matched_orders) == 1:
                 single_order = matched_orders[0]
                 if single_order.shoe_image_path:
-                    # Construct full image URL
-                    rel = single_order.shoe_image_path.lstrip("/")
-                    image_to_send = f"{base_url}/{rel}"
+                    # Store the image PATH (not URL) so the webhook can upload binary directly to Meta
+                    # The image_url field here is the actual local disk path for binary upload
+                    image_to_send = single_order.shoe_image_path  # raw path, resolved in webhook
                     caption_to_send = f"👟 Shoe photo for {single_order.customer_name} (#{single_order.order_code})"
 
             # Get final AI answer
