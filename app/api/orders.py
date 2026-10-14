@@ -120,6 +120,8 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
 
 @router.get("/", response_class=HTMLResponse)
 @router.get("/order", response_class=HTMLResponse)
+@router.get("/api/index", response_class=HTMLResponse)
+@router.get("/api/index/order", response_class=HTMLResponse)
 async def get_order_form():
     """Serve the customer order intake form."""
     form_path = Path(__file__).resolve().parent.parent / "templates" / "order_form.html"

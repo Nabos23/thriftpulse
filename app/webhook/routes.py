@@ -38,6 +38,8 @@ def _is_owner(phone: str) -> bool:
 
 
 @router.get("")
+@router.get("/")
+@router.get("/api/index/webhook")
 async def verify_webhook(
     hub_mode: str = Query(None, alias="hub.mode"),
     hub_verify_token: str = Query(None, alias="hub.verify_token"),
@@ -57,6 +59,8 @@ async def verify_webhook(
 
 
 @router.post("")
+@router.post("/")
+@router.post("/api/index/webhook")
 async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     Receive inbound WhatsApp events from Meta.
