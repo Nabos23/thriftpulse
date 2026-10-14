@@ -235,3 +235,40 @@ async def view_invoice(order_code: str):
     # Generate if not on disk
     from app.services.invoice_generator import generate_thermal_invoice_html
     return HTMLResponse(content=generate_thermal_invoice_html(order))
+
+
+@router.post("/api/maintenance/shrink")
+@router.get("/api/maintenance/shrink")
+@router.post("/api/index/maintenance/shrink")
+@router.get("/api/index/maintenance/shrink")
+async def shrink_archival_files(
+    days: int = 90,
+    dry_run: bool = False,
+    max_dimension: int = 160,
+    quality: int = 50,
+):
+    """
+    Archival maintenance route (Option 3):
+    Checks all shoe photos and HTML invoices created > `days` ago (default 90 days = 3 months)
+    and reduces their sizes:
+    1. Images are converted to lightweight micro-thumbnails (saving ~90-98% disk space).
+    2. Invoices are minified and streamlined (saving ~50% disk space).
+    
+    Parameters:
+    - days: Age threshold in days (default: 90 = 3 months). Pass days=0 to shrink all existing files.
+    - dry_run: If True, previews what would be shrunk and calculates savings without modifying disk.
+    - max_dimension: Max width/height for thumbnail images (default: 160px).
+    - quality: JPEG quality for shrunk images (default: 50).
+    """
+    import asyncio
+    from app.services.archival import shrink_old_records
+
+    result = await asyncio.to_thread(
+        shrink_old_records,
+        days=days,
+        dry_run=dry_run,
+        max_dimension=max_dimension,
+        quality=quality,
+    )
+    return JSONResponse(status_code=200, content=result)
+
