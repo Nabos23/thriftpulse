@@ -108,14 +108,19 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
             invoice_code=order.order_code,
         )
     else:
-        # If free-form succeeded, dispatch the shoe photo directly via binary upload!
+        # Dispatch shoe photo via binary upload (works on Vercel /tmp too)
         if order.shoe_image_path:
-            local_disk_path = settings.BASE_DIR / "app" / order.shoe_image_path.lstrip("/")
             caption = f"👟 Shoe for Order #{order.order_code} - {order.customer_name}"
-            if local_disk_path.exists():
-                wa.send_image_file(owner_phone, str(local_disk_path), caption=caption)
-            elif image_full_url:
-                wa.send_image(owner_phone, image_full_url, caption=caption)
+            filename = Path(order.shoe_image_path).name
+            candidates = [
+                Path("/tmp") / "uploads" / "shoes" / filename,   # Vercel
+                settings.BASE_DIR / "app" / order.shoe_image_path.lstrip("/"),  # local dev
+                settings.UPLOADS_DIR / filename,                  # config fallback
+            ]
+            for disk_path in candidates:
+                if disk_path.exists():
+                    wa.send_image_file(owner_phone, str(disk_path), caption=caption)
+                    break
 
 
 @router.get("/", response_class=HTMLResponse)
