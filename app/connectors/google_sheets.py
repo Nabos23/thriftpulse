@@ -63,10 +63,36 @@ class GoogleSheetsSync:
         sa_json_str = getattr(settings, "GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
         if sa_json_str:
             try:
+                # Handle possible wrapping quotes
+                if (sa_json_str.startswith("'") and sa_json_str.endswith("'")) or (sa_json_str.startswith('"') and sa_json_str.endswith('"')):
+                    sa_json_str = sa_json_str[1:-1].strip()
+
+                # Support base64 encoded JSON if provided
+                if not sa_json_str.startswith("{"):
+                    import base64
+                    try:
+                        sa_json_str = base64.b64decode(sa_json_str).decode("utf-8")
+                    except Exception:
+                        pass
+
                 info = json.loads(sa_json_str)
+                # Crucial fix for Vercel: unescape literal \n into real newlines in private_key
+                if "private_key" in info and isinstance(info["private_key"], str):
+                    info["private_key"] = info["private_key"].replace("\\n", "\n")
+
                 creds = service_account.Credentials.from_service_account_info(info, scopes=_SCOPES)
                 creds.refresh(Request())
                 self._creds = creds
+                logger.info("google_sheets_service_account_env_loaded")
+
+                # Cache to /tmp/service_account.json on serverless if possible
+                try:
+                    tmp_sa = Path("/tmp/service_account.json")
+                    if not tmp_sa.exists():
+                        tmp_sa.write_text(json.dumps(info), encoding="utf-8")
+                except Exception:
+                    pass
+
                 return creds
             except Exception as e:
                 logger.error("service_account_json_env_error", error=str(e))
