@@ -108,9 +108,12 @@ class WhatsAppClient:
             from pathlib import Path
             p = Path(file_path)
             if not p.exists():
+                print(f"[IMAGE_DEBUG] [WHATSAPP_CLIENT] upload_media: file does not exist at '{file_path}'")
                 logger.error("media_file_not_found", path=file_path)
                 return None
 
+            file_size = p.stat().st_size
+            print(f"[IMAGE_DEBUG] [WHATSAPP_CLIENT] upload_media: uploading '{p.name}' ({file_size} bytes, mime: {mime_type}) to Meta...")
             headers = {"Authorization": f"Bearer {self._token}"}
             with open(p, "rb") as f:
                 files = {"file": (p.name, f, mime_type)}
@@ -122,18 +125,23 @@ class WhatsAppClient:
                     files=files,
                     timeout=30,
                 )
+                print(f"[IMAGE_DEBUG] [WHATSAPP_CLIENT] Meta media upload HTTP {resp.status_code}: {resp.text}")
                 resp.raise_for_status()
                 media_id = resp.json().get("id")
+                print(f"[IMAGE_DEBUG] [WHATSAPP_CLIENT] Meta returned media_id='{media_id}'")
                 logger.info("media_uploaded_to_meta", media_id=media_id, file=p.name)
                 return media_id
         except Exception as e:
+            print(f"[IMAGE_DEBUG] [WHATSAPP_CLIENT] Meta media_upload_error: {e}")
             logger.error("media_upload_error", error=str(e), path=file_path)
             return None
 
     def send_image_file(self, to: str, file_path: str, caption: str = "") -> dict[str, Any]:
         """Upload local image file directly to Meta and send via media ID."""
+        print(f"[IMAGE_DEBUG] [WHATSAPP_CLIENT] send_image_file to '{to}', file='{file_path}', caption='{caption}'")
         media_id = self.upload_media(file_path)
         if not media_id:
+            print(f"[IMAGE_DEBUG] [WHATSAPP_CLIENT] send_image_file failed: media_id is None")
             return {"status": "error", "error": "Media upload failed"}
         try:
             body = {
@@ -149,12 +157,14 @@ class WhatsAppClient:
                 json=body,
                 timeout=20,
             )
+            print(f"[IMAGE_DEBUG] [WHATSAPP_CLIENT] Meta send_image_file message HTTP {resp.status_code}: {resp.text}")
             resp.raise_for_status()
             data = resp.json()
             msg_id = data.get("messages", [{}])[0].get("id", "")
             return {"status": "sent", "message_id": msg_id, "media_id": media_id}
         except Exception as e:
             err = _handle_error("send_image_file", e)
+            print(f"[IMAGE_DEBUG] [WHATSAPP_CLIENT] Meta send_image_file error: {err}")
             logger.error("whatsapp_send_image_file_error", to=to, error=err)
             return {"status": "error", "error": err}
 

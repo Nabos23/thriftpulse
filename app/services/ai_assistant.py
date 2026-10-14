@@ -362,31 +362,85 @@ async def execute_tool(name: str, args: dict[str, Any], base_url: str = "") -> t
     elif name == "search_orders_db":
         query = args.get("query", "")
         orders = await search_orders(query, limit=5)
+        print(f"[IMAGE_DEBUG] search_orders_db query='{query}' -> SQLite found {len(orders)} orders")
+        logger.info("search_orders_db_sqlite", query=query, found=len(orders))
         if not orders:
             # Fallback to search directly in Google Sheet
             try:
                 from app.connectors.google_sheets import get_sheets_sync
                 sheets = get_sheets_sync()
                 sheet_rows = sheets.search_sheet(query, limit=5)
+                print(f"[IMAGE_DEBUG] search_orders_db fallback to Google Sheet -> found {len(sheet_rows)} rows")
+                logger.info("search_orders_db_sheet_fallback", query=query, found=len(sheet_rows))
                 if sheet_rows:
-                    return json.dumps(sheet_rows), []
-            except Exception:
-                pass
+                    from app.models.order import Order
+                    sheet_orders = []
+                    for sr in sheet_rows:
+                        try:
+                            sheet_orders.append(Order(
+                                order_code=sr.get("order_code", ""),
+                                customer_name=sr.get("customer_name", ""),
+                                phone_primary=sr.get("phone_primary", ""),
+                                phone_secondary=sr.get("phone_secondary", ""),
+                                address=sr.get("full_address", ""),
+                                area=sr.get("city", ""),
+                                city=sr.get("city", ""),
+                                shoe_brand_model=sr.get("shoe_brand_model", ""),
+                                shoe_size=sr.get("shoe_size", ""),
+                                price=float(str(sr.get("price", "0")).replace(",", "") or 0),
+                                payment_method=sr.get("payment_method", "Cash on Delivery"),
+                                status=sr.get("status", "Pending"),
+                                shoe_image_path=sr.get("shoe_image_path", ""),
+                                invoice_path=sr.get("invoice_path", ""),
+                                notes=sr.get("notes", ""),
+                            ))
+                        except Exception as parse_err:
+                            print(f"[IMAGE_DEBUG] Failed to parse sheet row to Order: {parse_err}")
+                    print(f"[IMAGE_DEBUG] Converted {len(sheet_orders)} sheet rows to Order objects (images: {[o.shoe_image_path for o in sheet_orders]})")
+                    return json.dumps(sheet_rows), sheet_orders
+            except Exception as e:
+                print(f"[IMAGE_DEBUG] Error querying Google Sheets fallback: {e}")
+                logger.error("search_orders_db_sheet_error", error=str(e))
         serialized = [o.model_dump() for o in orders]
         return json.dumps(serialized), orders
 
     elif name == "get_recent_orders_db":
         limit = args.get("limit", 5)
         orders = await get_recent_orders(limit=limit)
+        print(f"[IMAGE_DEBUG] get_recent_orders_db limit={limit} -> SQLite found {len(orders)} orders")
         if not orders:
             try:
                 from app.connectors.google_sheets import get_sheets_sync
                 sheets = get_sheets_sync()
                 sheet_rows = sheets.search_sheet("", limit=limit)
+                print(f"[IMAGE_DEBUG] get_recent_orders_db fallback to Google Sheet -> found {len(sheet_rows)} rows")
                 if sheet_rows:
-                    return json.dumps(sheet_rows), []
-            except Exception:
-                pass
+                    from app.models.order import Order
+                    sheet_orders = []
+                    for sr in sheet_rows:
+                        try:
+                            sheet_orders.append(Order(
+                                order_code=sr.get("order_code", ""),
+                                customer_name=sr.get("customer_name", ""),
+                                phone_primary=sr.get("phone_primary", ""),
+                                phone_secondary=sr.get("phone_secondary", ""),
+                                address=sr.get("full_address", ""),
+                                area=sr.get("city", ""),
+                                city=sr.get("city", ""),
+                                shoe_brand_model=sr.get("shoe_brand_model", ""),
+                                shoe_size=sr.get("shoe_size", ""),
+                                price=float(str(sr.get("price", "0")).replace(",", "") or 0),
+                                payment_method=sr.get("payment_method", "Cash on Delivery"),
+                                status=sr.get("status", "Pending"),
+                                shoe_image_path=sr.get("shoe_image_path", ""),
+                                invoice_path=sr.get("invoice_path", ""),
+                                notes=sr.get("notes", ""),
+                            ))
+                        except Exception:
+                            pass
+                    return json.dumps(sheet_rows), sheet_orders
+            except Exception as e:
+                print(f"[IMAGE_DEBUG] Error in get_recent_orders_db sheet fallback: {e}")
         serialized = [o.model_dump() for o in orders]
         return json.dumps(serialized), orders
 
@@ -454,8 +508,10 @@ async def process_owner_query(text: str, sender_phone: str, base_url: str) -> di
                 except Exception:
                     fn_args = {"query": text}
 
+                print(f"[IMAGE_DEBUG] Calling tool '{fn_name}' with args: {fn_args}")
                 tool_output, orders = await execute_tool(fn_name, fn_args, base_url)
                 matched_orders.extend(orders)
+                print(f"[IMAGE_DEBUG] Tool '{fn_name}' returned {len(orders)} Order objects")
 
                 messages.append({
                     "role": "tool",
@@ -463,14 +519,19 @@ async def process_owner_query(text: str, sender_phone: str, base_url: str) -> di
                     "content": tool_output,
                 })
 
+            print(f"[IMAGE_DEBUG] Total matched_orders across all tools: {len(matched_orders)}")
             # Check if exactly one order was matched -> prepare image dispatch
             if len(matched_orders) == 1:
                 single_order = matched_orders[0]
+                print(f"[IMAGE_DEBUG] Single order matched: #{single_order.order_code}, shoe_image_path='{single_order.shoe_image_path}'")
                 if single_order.shoe_image_path:
-                    # Store the image PATH (not URL) so the webhook can upload binary directly to Meta
-                    # The image_url field here is the actual local disk path for binary upload
-                    image_to_send = single_order.shoe_image_path  # raw path, resolved in webhook
+                    image_to_send = single_order.shoe_image_path
                     caption_to_send = f"👟 Shoe photo for {single_order.customer_name} (#{single_order.order_code})"
+                    print(f"[IMAGE_DEBUG] Prepared image_to_send='{image_to_send}'")
+                else:
+                    print(f"[IMAGE_DEBUG] Order has no shoe_image_path!")
+            else:
+                print(f"[IMAGE_DEBUG] matched_orders count is {len(matched_orders)} (not 1), skipping single-image dispatch")
 
             # Get final AI answer
             second_resp = await client.chat.completions.create(
@@ -480,6 +541,7 @@ async def process_owner_query(text: str, sender_phone: str, base_url: str) -> di
             )
             final_reply = second_resp.choices[0].message.content or ""
 
+            print(f"[IMAGE_DEBUG] Returning ai_response with image_url='{image_to_send}'")
             return {
                 "reply_text": final_reply,
                 "image_url": image_to_send,

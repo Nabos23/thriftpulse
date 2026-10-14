@@ -162,25 +162,36 @@ async def _handle_incoming_message(raw_msg: dict, name_map: dict[str, str], base
 
         # 2. Send shoe photo if available via direct binary upload to Meta
         image_raw = ai_response.get("image_url")  # raw shoe_image_path from DB e.g. /static/uploads/shoes/shoe_abc.jpg
+        print(f"[IMAGE_DEBUG] [WEBHOOK] Owner query finished. image_raw='{image_raw}'")
+        logger.info("webhook_image_dispatch_start", image_raw=image_raw)
         if image_raw:
             caption = ai_response.get("image_caption") or "Shoe Photo"
-            # Try all candidate disk paths in order
             candidates = []
             if image_raw.startswith("/"):
                 candidates.append(Path(image_raw))
-            # Vercel /tmp path
             filename = Path(image_raw).name
             candidates.append(Path("/tmp") / "uploads" / "shoes" / filename)
-            # Local dev path
             candidates.append(settings.BASE_DIR / "app" / image_raw.lstrip("/"))
             candidates.append(settings.UPLOADS_DIR / filename)
 
             sent = False
             for disk_path in candidates:
-                if disk_path.exists():
-                    wa.send_image_file(sender_phone, str(disk_path), caption=caption)
+                exists = disk_path.exists()
+                print(f"[IMAGE_DEBUG] [WEBHOOK] Candidate '{disk_path}' exists={exists}")
+                logger.info("webhook_image_candidate_check", path=str(disk_path), exists=exists)
+                if exists:
+                    print(f"[IMAGE_DEBUG] [WEBHOOK] Found image on disk at '{disk_path}', sending via Meta upload...")
+                    send_res = wa.send_image_file(sender_phone, str(disk_path), caption=caption)
+                    print(f"[IMAGE_DEBUG] [WEBHOOK] wa.send_image_file result: {send_res}")
+                    logger.info("webhook_send_image_file_result", result=send_res)
                     sent = True
                     break
+
+            if not sent:
+                print(f"[IMAGE_DEBUG] [WEBHOOK] WARNING: None of the candidate disk paths existed on disk for '{image_raw}'!")
+                logger.warning("webhook_image_not_found_on_disk", image_raw=image_raw, candidates=[str(c) for c in candidates])
+        else:
+            print("[IMAGE_DEBUG] [WEBHOOK] No image_raw returned by ai_response (image_url was None or empty).")
 
     else:
         # Non-owner / Customer greeting
