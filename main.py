@@ -68,9 +68,24 @@ except OSError:
 if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
+from fastapi import Request
+
 # Include Routers
 app.include_router(orders_router)
 app.include_router(webhook_router)
+
+
+@app.get("/debug-path")
+@app.get("/api/debug-path")
+@app.get("/api/index/debug-path")
+def debug_path(request: Request):
+    return {
+        "url": str(request.url),
+        "path": request.url.path,
+        "scope_path": request.scope.get("path"),
+        "root_path": getattr(app, "root_path", ""),
+        "registered_routes": [getattr(r, "path", str(r)) for r in app.routes],
+    }
 
 
 if __name__ == "__main__":
