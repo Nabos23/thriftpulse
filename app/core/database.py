@@ -14,16 +14,30 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.models.order import Order
 
+import os
+
 logger = get_logger(__name__)
 
-DB_PATH = Path("thrift_orders.db")
+
+def _get_db_path() -> Path:
+    """Use /tmp on Vercel/serverless environments where cwd is read-only."""
+    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        return Path("/tmp/thrift_orders.db")
+    return Path("thrift_orders.db")
 
 
 def get_db_connection() -> sqlite3.Connection:
-    """Get a connection to the SQLite database with WAL enabled."""
-    conn = sqlite3.connect(DB_PATH, timeout=15)
+    """Get a connection to the SQLite database with safe journal mode."""
+    db_path = _get_db_path()
+    conn = sqlite3.connect(str(db_path), timeout=15)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL;")
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+    except Exception:
+        try:
+            conn.execute("PRAGMA journal_mode=DELETE;")
+        except Exception:
+            pass
     return conn
 
 
@@ -73,7 +87,7 @@ def init_db() -> None:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_order_code ON orders(order_code);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);")
 
-        logger.info("database_initialized", db_path=str(DB_PATH.resolve()))
+        logger.info("database_initialized", db_path=str(_get_db_path().resolve()))
     finally:
         conn.close()
 

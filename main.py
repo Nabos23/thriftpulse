@@ -25,7 +25,10 @@ async def lifespan(app: FastAPI):
     logger.info("application_startup", env=settings.ENVIRONMENT, port=settings.PORT)
     
     # Init database
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        logger.error("database_init_error", error=str(e))
     
     # Ensure Google Sheets headers
     try:
