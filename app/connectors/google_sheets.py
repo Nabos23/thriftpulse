@@ -10,6 +10,7 @@ from typing import Any
 
 import httpx
 from google.auth.transport.requests import Request
+from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 
 from app.core.config import settings
@@ -47,34 +48,70 @@ class GoogleSheetsSync:
     """Manages appending and syncing thrift orders to Google Sheets."""
 
     def __init__(self) -> None:
-        self._creds: Credentials | None = None
+        self._creds: Any = None
         self._token_path = settings.GOOGLE_TOKEN_PATH
         self._creds_path = settings.GOOGLE_CREDENTIALS_PATH
         self._spreadsheet_id = settings.SPREADSHEET_ID
         self._sheet_name = settings.ORDERS_SHEET_NAME
 
-    def _get_creds(self) -> Credentials:
-        """Load or refresh OAuth2 credentials."""
-        creds: Credentials | None = None
-        if Path(self._token_path).exists():
-            creds = Credentials.from_authorized_user_file(self._token_path, _SCOPES)
+    def _get_creds(self) -> Any:
+        """Load Service Account credentials (file or env) or OAuth2 user token."""
+        if self._creds and getattr(self._creds, "valid", False) and getattr(self._creds, "token", None):
+            return self._creds
 
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
+        # 1. Service Account JSON string from environment variable (ideal for Vercel)
+        sa_json_str = getattr(settings, "GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
+        if sa_json_str:
+            try:
+                info = json.loads(sa_json_str)
+                creds = service_account.Credentials.from_service_account_info(info, scopes=_SCOPES)
                 creds.refresh(Request())
-                with open(self._token_path, "w", encoding="utf-8") as f:
-                    f.write(creds.to_json())
-                logger.info("google_token_refreshed")
-            else:
-                raise RuntimeError(
-                    f"Google token not found or invalid at '{self._token_path}'."
-                )
+                self._creds = creds
+                return creds
+            except Exception as e:
+                logger.error("service_account_json_env_error", error=str(e))
 
-        self._creds = creds
-        return creds
+        # 2. Local service_account.json file
+        sa_path = Path(getattr(settings, "GOOGLE_SERVICE_ACCOUNT_PATH", "service_account.json"))
+        if sa_path.exists():
+            try:
+                creds = service_account.Credentials.from_service_account_file(str(sa_path), scopes=_SCOPES)
+                creds.refresh(Request())
+                self._creds = creds
+                return creds
+            except Exception as e:
+                logger.error("service_account_file_error", error=str(e))
+
+        # 3. Fallback to user OAuth token file
+        creds_oauth: Credentials | None = None
+        if Path(self._token_path).exists():
+            try:
+                creds_oauth = Credentials.from_authorized_user_file(self._token_path, _SCOPES)
+            except Exception:
+                creds_oauth = None
+
+        if creds_oauth and creds_oauth.expired and creds_oauth.refresh_token:
+            try:
+                creds_oauth.refresh(Request())
+                with open(self._token_path, "w", encoding="utf-8") as f:
+                    f.write(creds_oauth.to_json())
+                logger.info("google_token_refreshed")
+            except Exception as e:
+                logger.warning("google_token_refresh_failed", error=str(e))
+                creds_oauth = None
+
+        if creds_oauth and creds_oauth.valid:
+            self._creds = creds_oauth
+            return creds_oauth
+
+        raise RuntimeError(
+            "No valid Google credentials found. Please provide GOOGLE_SERVICE_ACCOUNT_JSON or place service_account.json."
+        )
 
     def _auth_headers(self) -> dict[str, str]:
         creds = self._get_creds()
+        if not getattr(creds, "token", None) or not getattr(creds, "valid", False):
+            creds.refresh(Request())
         return {
             "Authorization": f"Bearer {creds.token}",
             "Content-Type": "application/json",

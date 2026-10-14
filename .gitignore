@@ -12,6 +12,7 @@ __pycache__/
 google_token.json
 google_credentials.json
 client_secret*.json
+service_account*.json
 
 # SQLite Database & local storage
 *.db

@@ -59,12 +59,14 @@ class Settings(BaseSettings):
     LOCAL_WHISPER_MODEL: str = "base"  # "tiny", "base", "small"
     WHISPER_MODEL: str = "whisper-1"  # For OpenAI / OpenRouter
 
-    # Google Sheets
+    # Google Sheets (Service Account / OAuth)
+    GOOGLE_SERVICE_ACCOUNT_PATH: str = "service_account.json"
+    GOOGLE_SERVICE_ACCOUNT_JSON: str = ""  # Raw JSON string for Vercel env variable
+    SPREADSHEET_ID: str = ""
+    ORDERS_SHEET_NAME: str = "Orders"
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google/callback"
-    SPREADSHEET_ID: str = ""
-    ORDERS_SHEET_NAME: str = "Orders"
     GOOGLE_TOKEN_PATH: str = "google_token.json"
     GOOGLE_CREDENTIALS_PATH: str = "google_credentials.json"
 
