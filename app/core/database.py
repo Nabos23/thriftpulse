@@ -127,6 +127,19 @@ def insert_order_sync(data: dict[str, Any]) -> Order:
             row = cursor.fetchone()
             next_id = (row["max_id"] or 0) + 1
             order_code = data.get("order_code") or f"TS-{1000 + next_id}"
+
+            # Guarantee order_code uniqueness in SQLite
+            import re
+            while True:
+                cursor.execute("SELECT 1 FROM orders WHERE order_code = ?", (order_code,))
+                if not cursor.fetchone():
+                    break
+                m = re.search(r"TS-(\d+)", order_code, re.IGNORECASE)
+                if m:
+                    order_code = f"TS-{int(m.group(1)) + 1}"
+                else:
+                    order_code = f"{order_code}_1"
+
             now_iso = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             cursor.execute("""

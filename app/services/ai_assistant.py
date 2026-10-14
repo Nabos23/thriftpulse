@@ -65,26 +65,141 @@ def _get_client() -> AsyncOpenAI:
 
 SYSTEM_PROMPT = """ALWAYS Reply in English, even if the human is talking in Urdu or Roman Urdu.
 You are the intelligent WhatsApp AI Assistant for "Thrifted Shoes PK", assisting the store OWNER.
-The owner messages you via WhatsApp (in English, Urdu, or Roman Urdu like "Ali k joote ki details do", "Ali ka phone number chahiye", "0300... kiska order hai").
-The owner needs quick, accurate answers about customer orders, phone numbers, delivery addresses, and shoe photos (e.g. while driving, dealing with couriers/riders, or packing parcels).
+The owner messages you via WhatsApp (in English, Urdu, or Roman Urdu like "Ali k joote ki details do", "Ali ka order add karo: 03129214688, Lahore, Jordan 4 size 42, 4500 COD", "Mark TS-1001 as Shipped", "Sheet check karo").
 
-You have access to tools to search orders in the database.
-Always call the tools to look up the latest real data.
+You have tools to:
+1. Add a whole new order directly into the Database and Google Sheets (`add_order_to_sheet_and_db`).
+2. Search orders in Database with automatic Google Sheets fallback (`search_orders_db`).
+3. Read the live Google Sheet directly (`read_google_sheet`).
+4. Update the order status in Google Sheets and Database (`update_order_status_in_sheet`).
+5. View recent orders (`get_recent_orders_db`).
 
 Rules:
-1. Always be polite, concise, and professional.
-2. If the user asks in Roman Urdu or Urdu, respond naturally in helpful, clear Roman Urdu or Urdu matching their style.
-3. If search yields MULTIPLE matches, list them clearly with numbering (1, 2, 3...) showing Name, City, Shoe, and Date, and ask the owner which one they want to view.
-4. If search yields a SINGLE match, summarize the customer name, phone number(s), complete address, shoe brand/size, and COD price.
-5. In your tool calls or response, always reference the order so that the shoe picture can be delivered.
+1. When the owner asks to add or record an order (e.g. "Add order for Bilal...", "Bilal ka order add karo..."), ALWAYS call `add_order_to_sheet_and_db` with all extracted fields (name, phone, city, address, shoe model, size, price).
+2. When an order is added, confirm politely with:
+   - Order Code (e.g. TS-1002)
+   - Customer Name & Phone
+   - Delivery Address & City
+   - Shoe Article & Size
+   - Amount & Payment Method
+   - 1-Tap Waybill Print Link
+3. If the owner asks to check, read, or search the Google Sheet, use `read_google_sheet`.
+4. If the owner asks to change order status (e.g. "Mark TS-1001 as Dispatched/Delivered/Cancelled"), use `update_order_status_in_sheet`.
+5. If search yields a SINGLE match, summarize customer name, phone, address, shoe, and COD price clearly along with pic of the shoe.
 """
 
 TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "add_order_to_sheet_and_db",
+            "description": "Add a complete new order into Google Sheets and local database when customer or owner dictates order details. Generates order code, thermal waybill, and syncs immediately.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "customer_name": {
+                        "type": "string",
+                        "description": "Customer full name (e.g. 'Soban Bin Nadeem', 'Ali Raza')",
+                    },
+                    "phone_primary": {
+                        "type": "string",
+                        "description": "Customer mobile phone number (e.g. '03129214688')",
+                    },
+                    "city": {
+                        "type": "string",
+                        "description": "Delivery city (e.g. 'Lahore', 'Karachi', 'Islamabad')",
+                    },
+                    "address": {
+                        "type": "string",
+                        "description": "Complete street delivery address",
+                    },
+                    "shoe_brand_model": {
+                        "type": "string",
+                        "description": "Shoe article, brand, and model (e.g. 'Nike Dunk High', 'Jordan 4 Retro', 'Adidas Yeezy 350')",
+                    },
+                    "shoe_size": {
+                        "type": "string",
+                        "description": "Shoe size (e.g. '41', '42', '9 UK', '10 US')",
+                    },
+                    "price": {
+                        "type": "number",
+                        "description": "Total COD price in PKR (e.g. 4200, 5500)",
+                    },
+                    "payment_method": {
+                        "type": "string",
+                        "description": "Payment method (default: 'Cash on Delivery')",
+                    },
+                    "notes": {
+                        "type": "string",
+                        "description": "Special instructions or notes",
+                    },
+                    "area": {
+                        "type": "string",
+                        "description": "Neighborhood/Town/Sector (optional)",
+                    },
+                    "phone_secondary": {
+                        "type": "string",
+                        "description": "Alternative phone number (optional)",
+                    },
+                },
+                "required": [
+                    "customer_name",
+                    "phone_primary",
+                    "city",
+                    "address",
+                    "shoe_brand_model",
+                    "shoe_size",
+                    "price",
+                ],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_google_sheet",
+            "description": "Read orders directly from the Google Sheet. Filter by customer name, phone, city, order ID, shoe, or status.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search keyword or order code (e.g. 'Ali', 'TS-1001', '03129214688', 'Lahore')",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Max rows to return (default: 5)",
+                    },
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_order_status_in_sheet",
+            "description": "Update the delivery or processing status of an order in Google Sheets and database.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "order_code": {
+                        "type": "string",
+                        "description": "The order code (e.g. 'TS-1001')",
+                    },
+                    "new_status": {
+                        "type": "string",
+                        "description": "The updated status (e.g. 'Confirmed', 'Dispatched', 'Delivered', 'Cancelled', 'Returned')",
+                    },
+                },
+                "required": ["order_code", "new_status"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "search_orders_db",
-            "description": "Search for orders by customer name, phone number, city, shoe description, or order code.",
+            "description": "Search for orders across customer name, phone number, city, shoe description, or order code.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -143,18 +258,128 @@ def _format_order_card(order: Order, base_url: str) -> str:
     return "\n".join(lines)
 
 
-async def execute_tool(name: str, args: dict[str, Any]) -> tuple[str, list[Order]]:
+async def execute_tool(name: str, args: dict[str, Any], base_url: str = "") -> tuple[str, list[Order]]:
     """Execute tool and return JSON result + list of matched orders."""
-    if name == "search_orders_db":
+    if name == "add_order_to_sheet_and_db":
+        try:
+            from app.connectors.google_sheets import get_sheets_sync
+            from app.core.database import insert_order
+            from app.services.invoice_generator import save_invoice_file
+
+            sheets = get_sheets_sync()
+            order_code = sheets.get_next_order_code()
+
+            order_data = {
+                "order_code": order_code,
+                "customer_name": args.get("customer_name", "").strip(),
+                "phone_primary": args.get("phone_primary", "").strip(),
+                "phone_secondary": args.get("phone_secondary", "").strip(),
+                "city": args.get("city", "").strip(),
+                "area": args.get("area", "").strip() or args.get("city", "").strip(),
+                "address": args.get("address", "").strip(),
+                "nearest_landmark": args.get("nearest_landmark", "").strip(),
+                "shoe_brand_model": args.get("shoe_brand_model", "").strip(),
+                "shoe_size": str(args.get("shoe_size", "")).strip(),
+                "price": float(args.get("price", 0)),
+                "payment_method": args.get("payment_method", "Cash on Delivery").strip(),
+                "notes": args.get("notes", "").strip(),
+                "shoe_image_path": "",
+                "status": "Pending",
+                "sheets_synced": True,
+            }
+
+            new_order = await insert_order(order_data)
+            inv_path = save_invoice_file(new_order)
+            new_order.invoice_path = inv_path
+
+            # Append to Google Sheet in real-time
+            sheet_res = sheets.append_order(new_order)
+
+            result_summary = {
+                "status": "success",
+                "order_code": new_order.order_code,
+                "customer_name": new_order.customer_name,
+                "phone": new_order.phone_primary,
+                "city": new_order.city,
+                "full_address": new_order.full_address,
+                "shoe": f"{new_order.shoe_brand_model} (Size: {new_order.shoe_size})",
+                "price": f"PKR {new_order.price:,.0f}",
+                "payment_method": new_order.payment_method,
+                "invoice_url": f"{base_url}/invoice/{new_order.order_code}",
+                "google_sheets_sync": sheet_res.get("status", "unknown"),
+            }
+            return json.dumps(result_summary), [new_order]
+        except Exception as e:
+            logger.error("add_order_tool_error", error=str(e))
+            return json.dumps({"status": "error", "error": str(e)}), []
+
+    elif name == "read_google_sheet":
+        try:
+            from app.connectors.google_sheets import get_sheets_sync
+            sheets = get_sheets_sync()
+            rows = sheets.search_sheet(args.get("query", ""), limit=args.get("limit", 5))
+            return json.dumps(rows), []
+        except Exception as e:
+            logger.error("read_google_sheet_error", error=str(e))
+            return json.dumps({"status": "error", "error": str(e)}), []
+
+    elif name == "update_order_status_in_sheet":
+        try:
+            from app.connectors.google_sheets import get_sheets_sync
+            from app.core.database import get_db_connection
+            sheets = get_sheets_sync()
+            order_code = args.get("order_code", "").strip().upper()
+            new_status = args.get("new_status", "").strip()
+            sheet_res = sheets.update_order_status(order_code, new_status)
+
+            # Also update SQLite DB
+            try:
+                conn = get_db_connection()
+                with conn:
+                    conn.execute(
+                        "UPDATE orders SET status = ? WHERE order_code = ? OR order_code = ?",
+                        (new_status, order_code, order_code.lower())
+                    )
+                conn.close()
+            except Exception:
+                pass
+
+            return json.dumps(sheet_res), []
+        except Exception as e:
+            logger.error("update_order_status_tool_error", error=str(e))
+            return json.dumps({"status": "error", "error": str(e)}), []
+
+    elif name == "search_orders_db":
         query = args.get("query", "")
         orders = await search_orders(query, limit=5)
+        if not orders:
+            # Fallback to search directly in Google Sheet
+            try:
+                from app.connectors.google_sheets import get_sheets_sync
+                sheets = get_sheets_sync()
+                sheet_rows = sheets.search_sheet(query, limit=5)
+                if sheet_rows:
+                    return json.dumps(sheet_rows), []
+            except Exception:
+                pass
         serialized = [o.model_dump() for o in orders]
         return json.dumps(serialized), orders
+
     elif name == "get_recent_orders_db":
         limit = args.get("limit", 5)
         orders = await get_recent_orders(limit=limit)
+        if not orders:
+            try:
+                from app.connectors.google_sheets import get_sheets_sync
+                sheets = get_sheets_sync()
+                sheet_rows = sheets.search_sheet("", limit=limit)
+                if sheet_rows:
+                    return json.dumps(sheet_rows), []
+            except Exception:
+                pass
         serialized = [o.model_dump() for o in orders]
         return json.dumps(serialized), orders
+
     return "[]", []
 
 
@@ -219,7 +444,7 @@ async def process_owner_query(text: str, sender_phone: str, base_url: str) -> di
                 except Exception:
                     fn_args = {"query": text}
 
-                tool_output, orders = await execute_tool(fn_name, fn_args)
+                tool_output, orders = await execute_tool(fn_name, fn_args, base_url)
                 matched_orders.extend(orders)
 
                 messages.append({

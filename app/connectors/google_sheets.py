@@ -243,6 +243,189 @@ class GoogleSheetsSync:
             logger.error("sheets_append_error", order_code=order.order_code, error=str(e))
             return {"status": "error", "error": str(e)}
 
+    def get_all_rows(self) -> list[dict[str, Any]]:
+        """Fetch all order rows from the Google Sheet as dictionaries."""
+        if not self._spreadsheet_id:
+            logger.warning("sheets_skip_no_spreadsheet_id")
+            return []
+
+        try:
+            headers = self._auth_headers()
+            resp = httpx.get(
+                f"{_SHEETS_BASE}/{self._spreadsheet_id}/values/{self._sheet_name}!A2:O",
+                headers=headers,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            data = resp.json().get("values", [])
+            results = []
+            for row_idx, r in enumerate(data, start=2):
+                if not r or not any(str(x).strip() for x in r):
+                    continue
+                padded = list(r) + [""] * (len(SHEET_HEADERS) - len(r))
+                item = {
+                    "row_number": row_idx,
+                    "order_code": str(padded[0]).strip(),
+                    "created_at": str(padded[1]).strip(),
+                    "customer_name": str(padded[2]).strip(),
+                    "phone_primary": str(padded[3]).strip(),
+                    "phone_secondary": str(padded[4]).strip(),
+                    "city": str(padded[5]).strip(),
+                    "full_address": str(padded[6]).strip(),
+                    "shoe_brand_model": str(padded[7]).strip(),
+                    "shoe_size": str(padded[8]).strip(),
+                    "price": str(padded[9]).strip(),
+                    "payment_method": str(padded[10]).strip(),
+                    "status": str(padded[11]).strip(),
+                    "shoe_image_path": str(padded[12]).strip(),
+                    "invoice_path": str(padded[13]).strip(),
+                    "notes": str(padded[14]).strip(),
+                }
+                results.append(item)
+            return results
+        except Exception as e:
+            logger.error("sheets_read_error", error=str(e))
+            return []
+
+    def search_sheet(self, query: str = "", limit: int = 10) -> list[dict[str, Any]]:
+        """Search across all order rows in Google Sheets."""
+        rows = self.get_all_rows()
+        if not rows:
+            return []
+        if not query or not query.strip():
+            # Return recent rows (newest first)
+            return rows[-limit:][::-1]
+
+        q = query.strip().lower()
+        matched = []
+        for r in reversed(rows):
+            searchable = " ".join([
+                r.get("order_code", ""),
+                r.get("customer_name", ""),
+                r.get("phone_primary", ""),
+                r.get("phone_secondary", ""),
+                r.get("city", ""),
+                r.get("full_address", ""),
+                r.get("shoe_brand_model", ""),
+                r.get("status", ""),
+                r.get("notes", ""),
+            ]).lower()
+            if q in searchable:
+                matched.append(r)
+                if len(matched) >= limit:
+                    break
+        return matched
+
+    def get_next_order_code(self) -> str:
+        """Find the highest order code across Google Sheets and local SQLite DB."""
+        highest_num = 1000
+        import re
+
+        # 1. Check Google Sheets
+        try:
+            rows = self.get_all_rows()
+            for r in rows:
+                code = r.get("order_code", "").strip()
+                m = re.search(r"TS-(\d+)", code, re.IGNORECASE)
+                if m:
+                    try:
+                        num = int(m.group(1))
+                        if num > highest_num:
+                            highest_num = num
+                    except ValueError:
+                        pass
+        except Exception:
+            pass
+
+        # 2. Check local SQLite DB
+        try:
+            from app.core.database import get_db_connection
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT order_code FROM orders")
+            for db_row in cursor.fetchall():
+                code = str(db_row[0] or "").strip()
+                m = re.search(r"TS-(\d+)", code, re.IGNORECASE)
+                if m:
+                    try:
+                        num = int(m.group(1))
+                        if num > highest_num:
+                            highest_num = num
+                    except ValueError:
+                        pass
+            conn.close()
+        except Exception:
+            pass
+
+        return f"TS-{highest_num + 1}"
+
+    def update_order_status(self, order_code: str, new_status: str) -> dict[str, Any]:
+        """Update the Status column (L) of a given order in Google Sheets."""
+        if not self._spreadsheet_id:
+            return {"status": "skipped", "reason": "no_spreadsheet_id"}
+        try:
+            rows = self.get_all_rows()
+            target_row = None
+            clean_code = order_code.strip().upper()
+            for r in rows:
+                if r.get("order_code", "").strip().upper() == clean_code:
+                    target_row = r["row_number"]
+                    break
+
+            if not target_row:
+                return {"status": "not_found", "message": f"Order {order_code} not found in sheet"}
+
+            headers = self._auth_headers()
+            cell_range = f"{self._sheet_name}!L{target_row}"
+            body = {"values": [[new_status]]}
+            resp = httpx.put(
+                f"{_SHEETS_BASE}/{self._spreadsheet_id}/values/{cell_range}?valueInputOption=USER_ENTERED",
+                headers=headers,
+                json=body,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            logger.info("sheets_status_updated", order_code=order_code, row=target_row, status=new_status)
+            return {"status": "ok", "order_code": order_code, "new_status": new_status, "row": target_row}
+        except Exception as e:
+            logger.error("sheets_update_status_error", error=str(e), order_code=order_code)
+            return {"status": "error", "error": str(e)}
+
+    def update_order_note(self, order_code: str, note: str) -> dict[str, Any]:
+        """Update or append to the Notes column (O) of a given order in Google Sheets."""
+        if not self._spreadsheet_id:
+            return {"status": "skipped", "reason": "no_spreadsheet_id"}
+        try:
+            rows = self.get_all_rows()
+            target_row = None
+            clean_code = order_code.strip().upper()
+            existing_note = ""
+            for r in rows:
+                if r.get("order_code", "").strip().upper() == clean_code:
+                    target_row = r["row_number"]
+                    existing_note = r.get("notes", "")
+                    break
+
+            if not target_row:
+                return {"status": "not_found", "message": f"Order {order_code} not found in sheet"}
+
+            new_notes = f"{existing_note}; {note}".strip("; ") if existing_note else note
+            headers = self._auth_headers()
+            cell_range = f"{self._sheet_name}!O{target_row}"
+            body = {"values": [[new_notes]]}
+            resp = httpx.put(
+                f"{_SHEETS_BASE}/{self._spreadsheet_id}/values/{cell_range}?valueInputOption=USER_ENTERED",
+                headers=headers,
+                json=body,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            logger.info("sheets_note_updated", order_code=order_code, row=target_row)
+            return {"status": "ok", "order_code": order_code, "notes": new_notes, "row": target_row}
+        except Exception as e:
+            logger.error("sheets_update_note_error", error=str(e), order_code=order_code)
+            return {"status": "error", "error": str(e)}
+
 
 _sheets_sync: GoogleSheetsSync | None = None
 
