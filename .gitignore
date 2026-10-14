@@ -1,0 +1,50 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables & secrets (CRITICAL - NEVER COMMIT)
+.env
+.env.*
+!.env.example
+
+# Google OAuth credentials & tokens (CRITICAL - NEVER COMMIT)
+google_token.json
+google_credentials.json
+client_secret*.json
+
+# SQLite Database & local storage
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+thrift_orders.db
+
+# Generated invoices & uploaded customer photos (keep folders via .gitkeep)
+app/static/uploads/shoes/*
+!app/static/uploads/shoes/.gitkeep
+app/static/invoices/*
+!app/static/invoices/.gitkeep
+
+# Temporary files, logs, and scratch scripts
+scratch/
+logs/
+*.log
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE, OS, and Agent metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.gemini/

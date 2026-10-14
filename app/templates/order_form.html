@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Your Order - Thrifted Shoes PK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #f59e0b;
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: rgba(15, 23, 42, 0.75);
+      --input-border: rgba(255, 255, 255, 0.12);
+      --success: #10b981;
+      --danger: #ef4444;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(14, 165, 233, 0.08) 0px, transparent 60%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      animation: fadeInDown 0.6s ease;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #818cf8;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      backdrop-filter: blur(8px);
+    }
+
+    .title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      animation: fadeInUp 0.7s ease;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #818cf8;
+      margin: 20px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title:first-of-type {
+      margin-top: 0;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+
+    .req {
+      color: var(--accent);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #ffffff;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: #64748b;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    /* Image Upload Box */
+    .upload-container {
+      border: 2px dashed rgba(99, 102, 241, 0.4);
+      background: rgba(99, 102, 241, 0.04);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.25s ease;
+      overflow: hidden;
+    }
+
+    .upload-container:hover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    .upload-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
+    .upload-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+
+    .upload-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    #shoe_photo_input {
+      display: none;
+    }
+
+    .preview-box {
+      display: none;
+      margin-top: 12px;
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      max-height: 220px;
+    }
+
+    .preview-img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #ffffff;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+    }
+
+    /* Button */
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.45);
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.6);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    /* Success Card */
+    .success-card {
+      display: none;
+      text-align: center;
+      animation: zoomIn 0.5s ease;
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid var(--success);
+      color: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 16px;
+    }
+
+    .success-code {
+      display: inline-block;
+      font-family: 'Space Grotesk', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px dashed rgba(56, 189, 248, 0.3);
+      padding: 8px 16px;
+      border-radius: 8px;
+      margin: 12px 0 18px;
+    }
+
+    .info-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <div class="brand-badge">⚡ Thrifted Shoes PK</div>
+      <h1 class="title">Delivery & Order Form</h1>
+      <p class="subtitle">Fill in your delivery address & shoe photo to confirm your order.</p>
+    </div>
+
+    <div class="card">
+      <form id="orderForm">
+        
+        <!-- SECTION 1: Shoe Particulars -->
+        <div class="section-title">👟 1. Shoe Details</div>
+        
+        <!-- Image Upload with Auto-compression -->
+        <div class="form-group">
+          <label>Photo of Selected Shoes <span class="req">* (Very Important)</span></label>
+          <div class="upload-container" id="uploadZone" onclick="document.getElementById('shoe_photo_input').click()">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Click or Tap to Upload Shoe Photo</div>
+            <div class="upload-hint">Upload screenshot or photo sent on WhatsApp/IG</div>
+          </div>
+          <input type="file" id="shoe_photo_input" accept="image/*" required>
+          
+          <div class="preview-box" id="previewBox">
+            <img id="previewImg" class="preview-img" src="" alt="Shoe Preview">
+            <button type="button" class="remove-btn" onclick="clearPhoto()">✕ Change</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Shoe Name / Article <span class="req">*</span></label>
+            <input type="text" id="shoe_brand_model" placeholder="e.g. Nike Dunk Low" required>
+          </div>
+          <div class="form-group">
+            <label>Shoe Size <span class="req">*</span></label>
+            <input type="text" id="shoe_size" placeholder="e.g. 42 EU / 8.5 US" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Agreed Price (PKR) <span class="req">*</span></label>
+            <input type="number" id="price" placeholder="e.g. 4500" required min="100">
+          </div>
+          <div class="form-group">
+            <label>Payment Method</label>
+            <select id="payment_method">
+              <option value="Cash on Delivery">Cash on Delivery (COD)</option>
+              <option value="Advance Bank Transfer">Advance Bank Transfer</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SECTION 2: Customer Contact -->
+        <div class="section-title">👤 2. Customer Information</div>
+
+        <div class="form-group">
+          <label>Your Full Name <span class="req">*</span></label>
+          <input type="text" id="customer_name" placeholder="Enter your full name" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Primary Phone / WhatsApp <span class="req">*</span></label>
+            <input type="tel" id="phone_primary" placeholder="03XXXXXXXXX" required>
+          </div>
+          <div class="form-group">
+            <label>Alternate Phone <span style="color:#64748b;">(Optional)</span></label>
+            <input type="tel" id="phone_secondary" placeholder="03XXXXXXXXX">
+          </div>
+        </div>
+
+        <!-- SECTION 3: Delivery Address -->
+        <div class="section-title">📍 3. Delivery Address</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>City <span class="req">*</span></label>
+            <input type="text" id="city" placeholder="e.g. Karachi, Lahore, Islamabad" required>
+          </div>
+          <div class="form-group">
+            <label>Area / Sector / Colony <span class="req">*</span></label>
+            <input type="text" id="area" placeholder="e.g. DHA Phase 5 / Gulberg" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Complete House / Flat / Street Address <span class="req">*</span></label>
+          <textarea id="address" rows="2" placeholder="House #, Street #, Apartment name etc." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Nearest Prominent Landmark <span style="color:#64748b;">(Optional)</span></label>
+          <input type="text" id="nearest_landmark" placeholder="e.g. Near PSO Pump, Behind City Hospital">
+        </div>
+
+        <div class="form-group">
+          <label>Special Instructions / Notes</label>
+          <input type="text" id="notes" placeholder="e.g. Deliver between 2pm-6pm">
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <span class="spinner" id="btnSpinner"></span>
+          <span id="btnText">Confirm & Place Order 🚀</span>
+        </button>
+      </form>
+
+      <!-- SUCCESS SCREEN -->
+      <div class="success-card" id="successCard">
+        <div class="success-icon">✓</div>
+        <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 6px;">Order Confirmed!</h2>
+        <p style="color: var(--text-muted); font-size: 14px;">Your order and shoe photo have been logged successfully.</p>
+        
+        <div class="success-code" id="orderCodeDisplay">TS-1001</div>
+
+        <div class="info-pill" id="summaryBox">
+          <div>👤 <strong>Receiver:</strong> <span id="resName"></span></div>
+          <div>📞 <strong>Phone:</strong> <span id="resPhone"></span></div>
+          <div>📍 <strong>City:</strong> <span id="resCity"></span></div>
+          <div>👟 <strong>Item:</strong> <span id="resItem"></span></div>
+          <div>💵 <strong>COD Amount:</strong> PKR <span id="resPrice"></span></div>
+        </div>
+
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">
+          Our team will dispatch your parcel via courier shortly. The seller has received your receipt.
+        </p>
+
+        <button type="button" class="submit-btn" onclick="location.reload()" style="background: rgba(255,255,255,0.08); box-shadow: none;">
+          Submit Another Order
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let compressedPhotoBlob = null;
+
+    // Handle Image Selection and Client-side Canvas Compression
+    const photoInput = document.getElementById('shoe_photo_input');
+    const uploadZone = document.getElementById('uploadZone');
+    const previewBox = document.getElementById('previewBox');
+    const previewImg = document.getElementById('previewImg');
+
+    photoInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Compress client side to max 1280px width/height and 0.8 quality
+      compressedPhotoBlob = await compressImage(file, 1280, 0.82);
+      
+      const previewUrl = URL.createObjectURL(compressedPhotoBlob);
+      previewImg.src = previewUrl;
+      uploadZone.style.display = 'none';
+      previewBox.style.display = 'block';
+    });
+
+    function clearPhoto() {
+      photoInput.value = '';
+      compressedPhotoBlob = null;
+      uploadZone.style.display = 'block';
+      previewBox.style.display = 'none';
+    }
+
+    function compressImage(file, maxDimension, quality) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxDimension) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              }
+            } else {
+              if (height > maxDimension) {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              resolve(blob);
+            }, 'image/jpeg', quality);
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Form Submission
+    const orderForm = document.getElementById('orderForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const btnText = document.getElementById('btnText');
+    const successCard = document.getElementById('successCard');
+
+    orderForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!compressedPhotoBlob) {
+        alert('Please select and upload a picture of the shoes.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      btnSpinner.style.display = 'inline-block';
+      btnText.innerText = 'Creating Order...';
+
+      const formData = new FormData();
+      formData.append('customer_name', document.getElementById('customer_name').value.trim());
+      formData.append('phone_primary', document.getElementById('phone_primary').value.trim());
+      formData.append('phone_secondary', document.getElementById('phone_secondary').value.trim());
+      formData.append('city', document.getElementById('city').value.trim());
+      formData.append('area', document.getElementById('area').value.trim());
+      formData.append('address', document.getElementById('address').value.trim());
+      formData.append('nearest_landmark', document.getElementById('nearest_landmark').value.trim());
+      formData.append('shoe_brand_model', document.getElementById('shoe_brand_model').value.trim());
+      formData.append('shoe_size', document.getElementById('shoe_size').value.trim());
+      formData.append('price', document.getElementById('price').value.trim());
+      formData.append('payment_method', document.getElementById('payment_method').value);
+      formData.append('notes', document.getElementById('notes').value.trim());
+      formData.append('shoe_photo', compressedPhotoBlob, 'shoe_photo.jpg');
+
+      try {
+        const response = await fetch('/api/orders', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'ok') {
+          // Show Success Card
+          orderForm.style.display = 'none';
+          successCard.style.display = 'block';
+
+          document.getElementById('orderCodeDisplay').innerText = data.order.order_code;
+          document.getElementById('resName').innerText = data.order.customer_name;
+          document.getElementById('resPhone').innerText = data.order.phone_primary;
+          document.getElementById('resCity').innerText = data.order.city;
+          document.getElementById('resItem').innerText = data.order.shoe_brand_model + ' (' + data.order.shoe_size + ')';
+          document.getElementById('resPrice').innerText = Number(data.order.price).toLocaleString();
+        } else {
+          alert('Error placing order: ' + (data.detail || data.error || 'Server error'));
+          submitBtn.disabled = false;
+          btnSpinner.style.display = 'none';
+          btnText.innerText = 'Confirm & Place Order 🚀';
+        }
+      } catch (err) {
+        alert('Network connection error. Please try again.');
+        submitBtn.disabled = false;
+        btnSpinner.style.display = 'none';
+        btnText.innerText = 'Confirm & Place Order 🚀';
+      }
+    });
+  </script>
+</body>
+</html>
