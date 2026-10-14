@@ -190,6 +190,14 @@ async def _handle_incoming_message(raw_msg: dict, name_map: dict[str, str], base
             if not sent:
                 print(f"[IMAGE_DEBUG] [WEBHOOK] WARNING: None of the candidate disk paths existed on disk for '{image_raw}'!")
                 logger.warning("webhook_image_not_found_on_disk", image_raw=image_raw, candidates=[str(c) for c in candidates])
+                if image_raw.startswith("http://") or image_raw.startswith("https://"):
+                    img_url = image_raw
+                else:
+                    public_base = (settings.BASE_URL if ("localhost" in base_url or "127.0.0.1" in base_url) else base_url).rstrip("/")
+                    img_url = f"{public_base}/{image_raw.lstrip('/')}"
+                print(f"[IMAGE_DEBUG] [WEBHOOK] Attempting URL dispatch fallback: {img_url}")
+                url_send_res = wa.send_image(sender_phone, img_url, caption=caption)
+                print(f"[IMAGE_DEBUG] [WEBHOOK] wa.send_image fallback result: {url_send_res}")
         else:
             print("[IMAGE_DEBUG] [WEBHOOK] No image_raw returned by ai_response (image_url was None or empty).")
 

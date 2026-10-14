@@ -378,11 +378,13 @@ async def execute_tool(name: str, args: dict[str, Any], base_url: str = "") -> t
                     for sr in sheet_rows:
                         try:
                             sheet_orders.append(Order(
+                                id=int(sr.get("row_number") or 1),
                                 order_code=sr.get("order_code", ""),
+                                created_at=str(sr.get("created_at") or ""),
                                 customer_name=sr.get("customer_name", ""),
                                 phone_primary=sr.get("phone_primary", ""),
                                 phone_secondary=sr.get("phone_secondary", ""),
-                                address=sr.get("full_address", ""),
+                                address=sr.get("full_address", "") or sr.get("city", ""),
                                 area=sr.get("city", ""),
                                 city=sr.get("city", ""),
                                 shoe_brand_model=sr.get("shoe_brand_model", ""),
@@ -420,11 +422,13 @@ async def execute_tool(name: str, args: dict[str, Any], base_url: str = "") -> t
                     for sr in sheet_rows:
                         try:
                             sheet_orders.append(Order(
+                                id=int(sr.get("row_number") or 1),
                                 order_code=sr.get("order_code", ""),
+                                created_at=str(sr.get("created_at") or ""),
                                 customer_name=sr.get("customer_name", ""),
                                 phone_primary=sr.get("phone_primary", ""),
                                 phone_secondary=sr.get("phone_secondary", ""),
-                                address=sr.get("full_address", ""),
+                                address=sr.get("full_address", "") or sr.get("city", ""),
                                 area=sr.get("city", ""),
                                 city=sr.get("city", ""),
                                 shoe_brand_model=sr.get("shoe_brand_model", ""),

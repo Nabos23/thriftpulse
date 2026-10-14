@@ -24,9 +24,9 @@ class OrderCreate(BaseModel):
 
 
 class Order(BaseModel):
-    id: int
+    id: Optional[int] = 0
     order_code: str
-    created_at: str
+    created_at: Optional[str] = ""
     customer_name: str
     phone_primary: str
     phone_secondary: Optional[str] = ""
