@@ -1,7 +1,7 @@
 """
 Invoice and Dispatch Slip Generator for Thrifted Shoes.
 Creates modern, clean, minimalist parcel dispatch slips matching the store's custom card design.
-Supports single slip printing and interactive in-page Batch Printing (up to 4 invoices per A4 page).
+Supports single slip printing and interactive in-page Batch Printing (fits 4 invoices per A4 page on Default printer settings).
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def render_slip_card_html(order: Order, hide_meta: bool = False) -> str:
     """
     Renders an individual minimalist dispatch slip card.
     Faithfully matches the client's reference design:
-    - SHOE & SIZE 2-column header with underlines
+    - SHOE & SIZE header: Shoe name gets maximum room, SIZE is positioned in the right corner.
     - Clean horizontal divider
     - CUSTOMER NAME (large bold)
     - PHONE NUMBER (large bold)
@@ -61,7 +61,7 @@ def render_slip_card_html(order: Order, hide_meta: bool = False) -> str:
 
     return f"""
     <div class="slip-card" data-order-code="{order_code}">
-      <!-- Top SHOE & SIZE Header -->
+      <!-- Top SHOE & SIZE Header (Shoe gets full room, Size in right corner) -->
       <div class="card-top-header">
         <div class="header-col header-shoe">
           <div class="field-label">SHOE</div>
@@ -72,9 +72,9 @@ def render_slip_card_html(order: Order, hide_meta: bool = False) -> str:
         </div>
         <div class="header-v-divider"></div>
         <div class="header-col header-size">
-          <div class="field-label">SIZE</div>
+          <div class="field-label text-right">SIZE</div>
           <div class="field-value-line">
-            <span class="header-val size-val">{shoe_size}</span>
+            <span class="header-val size-val text-right">{shoe_size}</span>
             <div class="underline"></div>
           </div>
         </div>
@@ -121,6 +121,7 @@ def get_common_css() -> str:
     """
     Core typography and styling for dispatch slips.
     Uses simple, standard sans-serif font family and accurate layout metrics.
+    Carefully calibrated so 4 cards fit cleanly on 1 A4 page under Chrome's Default margin settings.
     """
     return """
     * {
@@ -143,7 +144,7 @@ def get_common_css() -> str:
       background: #ffffff;
       border: 1.5px solid #cbd5e1;
       border-radius: 8px;
-      padding: 16px 18px;
+      padding: 10px 14px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -152,19 +153,24 @@ def get_common_css() -> str:
       overflow: hidden;
     }
 
-    /* Top Header: SHOE | SIZE */
+    /* Top Header: SHOE (expanded) | SIZE (in right corner) */
     .card-top-header {
       display: flex;
       align-items: flex-end;
       width: 100%;
-      gap: 12px;
+      gap: 10px;
     }
 
-    .header-col {
+    .header-shoe {
       flex: 1;
-      display: flex;
-      flex-direction: column;
       min-width: 0;
+    }
+
+    .header-size {
+      flex: 0 0 auto;
+      min-width: 65px;
+      max-width: 95px;
+      text-align: right;
     }
 
     .header-v-divider {
@@ -172,15 +178,20 @@ def get_common_css() -> str:
       background-color: #cbd5e1;
       align-self: stretch;
       margin-bottom: 2px;
+      flex-shrink: 0;
+    }
+
+    .text-right {
+      text-align: right !important;
     }
 
     .field-label {
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 700;
-      letter-spacing: 0.8px;
+      letter-spacing: 0.7px;
       text-transform: uppercase;
       color: #5b6b82;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .field-value-line {
@@ -188,36 +199,48 @@ def get_common_css() -> str:
       flex-direction: column;
     }
 
-    .header-val {
-      font-size: 15px;
+    .shoe-val {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0b192c;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.2;
+      min-height: 18px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .size-val {
+      font-size: 13.5px;
       font-weight: 700;
       color: #0b192c;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      min-height: 20px;
-      line-height: 20px;
+      text-align: right;
+      min-height: 18px;
     }
 
     .underline {
       height: 1.5px;
       background-color: #cbd5e1;
       width: 100%;
-      margin-top: 4px;
+      margin-top: 3px;
     }
 
     .header-h-divider {
       height: 1.5px;
       background-color: #cbd5e1;
       width: 100%;
-      margin: 12px 0 14px 0;
+      margin: 7px 0 9px 0;
     }
 
     /* Customer details body */
     .card-body {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
       flex-grow: 1;
     }
 
@@ -227,39 +250,39 @@ def get_common_css() -> str:
     }
 
     .name-val {
-      font-size: 21px;
+      font-size: 18px;
       font-weight: 800;
       color: #0b192c;
       letter-spacing: -0.2px;
-      line-height: 1.2;
+      line-height: 1.15;
     }
 
     .phone-val {
-      font-size: 21px;
+      font-size: 18px;
       font-weight: 800;
       color: #0b192c;
       letter-spacing: 0.2px;
-      line-height: 1.2;
+      line-height: 1.15;
     }
 
     .alt-phone {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: #64748b;
     }
 
     .city-val {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
       color: #0b192c;
       line-height: 1.2;
     }
 
     .address-val {
-      font-size: 13.5px;
+      font-size: 12px;
       font-weight: 500;
       color: #0f172a;
-      line-height: 1.38;
+      line-height: 1.3;
       word-break: break-word;
     }
 
@@ -267,27 +290,29 @@ def get_common_css() -> str:
     .dashed-divider {
       border-top: 1.5px dashed #cbd5e1;
       width: 100%;
-      margin: 10px 0 10px 0;
+      margin: 7px 0 7px 0;
     }
 
     /* Notes */
     .notes-section {
       display: flex;
       flex-direction: column;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .notes-box {
       border: 1.5px solid #cbd5e1;
       border-radius: 6px;
-      min-height: 54px;
-      padding: 6px 10px;
-      font-size: 12px;
-      line-height: 1.4;
+      min-height: 38px;
+      max-height: 52px;
+      padding: 4px 8px;
+      font-size: 11px;
+      line-height: 1.3;
       color: #334155;
       background-color: #ffffff;
       word-break: break-word;
       white-space: pre-wrap;
+      overflow: hidden;
     }
 
     /* Subtle slip footer */
@@ -295,8 +320,8 @@ def get_common_css() -> str:
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 6px;
-      font-size: 9.5px;
+      margin-top: 4px;
+      font-size: 9px;
       color: #94a3b8;
       font-weight: 500;
       letter-spacing: 0.3px;
@@ -368,14 +393,6 @@ def get_common_css() -> str:
       background: #0284c7;
     }
 
-    .btn-secondary {
-      background: #334155;
-      color: #ffffff;
-    }
-    .btn-secondary:hover {
-      background: #475569;
-    }
-
     .btn-outline {
       background: transparent;
       color: #cbd5e1;
@@ -393,28 +410,28 @@ def get_common_css() -> str:
       box-shadow: 0 4px 14px rgba(0,0,0,0.08);
       margin: 70px auto 30px auto;
       width: 210mm;
-      min-height: 297mm;
-      padding: 8mm;
+      max-width: 195mm;
+      padding: 4mm;
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       grid-template-rows: repeat(2, 1fr);
-      gap: 6mm 8mm;
+      gap: 4mm 6mm;
     }
 
     /* Sizing for 4 cards per sheet */
     .page-sheet .slip-card {
-      height: 136mm;
-      max-height: 138mm;
-      padding: 12px 14px;
+      height: 118mm;
+      max-height: 120mm;
+      padding: 10px 12px;
     }
 
     .single-view-container {
       margin: 80px auto 40px auto;
-      width: 105mm;
+      width: 100mm;
     }
     .single-view-container .slip-card {
-      min-height: 140mm;
-      padding: 18px 20px;
+      min-height: 125mm;
+      padding: 16px 18px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
 
@@ -586,17 +603,19 @@ def get_common_css() -> str:
       color: #64748b;
     }
 
-    /* ── @media print for flawless 4-per-page A4 printing ── */
+    /* ── @media print for flawless 4-per-page A4 printing (Works on Default Margins) ── */
     @page {
       size: A4 portrait;
-      margin: 6mm 8mm;
+      margin: 4mm 6mm;
     }
 
     @media print {
-      body {
+      html, body {
         background: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
       }
 
       .no-print,
@@ -614,21 +633,26 @@ def get_common_css() -> str:
         box-shadow: none !important;
         border: 1.5px solid #000 !important;
         width: 100% !important;
-        max-width: 100mm !important;
+        max-width: 95mm !important;
         page-break-inside: avoid;
         break-inside: avoid;
       }
 
       .page-sheet {
         box-shadow: none !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
         width: 100% !important;
-        height: 284mm !important;
-        max-height: 284mm !important;
+        max-width: 190mm !important;
+        height: auto !important;
+        max-height: 242mm !important;
         padding: 0 !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-rows: repeat(2, 1fr) !important;
+        gap: 3mm 5mm !important;
         page-break-after: always !important;
         break-after: page !important;
-        box-sizing: border-box;
+        box-sizing: border-box !important;
       }
 
       .page-sheet:last-of-type {
@@ -637,12 +661,14 @@ def get_common_css() -> str:
       }
 
       .page-sheet .slip-card {
-        height: 137mm !important;
-        max-height: 138mm !important;
+        height: 118mm !important;
+        max-height: 119mm !important;
         box-sizing: border-box !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
         border: 1.5px solid #cbd5e1 !important;
+        padding: 9px 12px !important;
+        overflow: hidden !important;
       }
     }
     """
@@ -658,8 +684,9 @@ def generate_single_invoice_page(
     Renders the dispatch slip page.
     Includes:
     - Clean single slip view matching the client's reference design.
-    - An in-page 'Batch Printing' option: clicking it shows other recent invoices,
-      allowing the owner to select up to 4 invoices to print together in an A4 2x2 grid.
+    - Shoe name given maximum room, with Size positioned cleanly in right corner.
+    - In-page 'Batch Printing' option: pre-selects 4 invoices by default,
+      allowing the owner to adjust or print 4 invoices together on 1 A4 page under Default printer margins.
     """
     css = get_common_css()
 
@@ -685,11 +712,14 @@ def generate_single_invoice_page(
     # Ensure current order is first in the list
     ordered_list = [order] + [o for o in candidates.values() if o.order_code != order.order_code]
 
-    for o in ordered_list:
+    # Default settings: pre-select up to 4 invoices by default so 4 are ready to print immediately
+    for idx, o in enumerate(ordered_list):
         is_curr = (o.order_code == order.order_code)
-        initially_checked = is_curr
         if initial_batch_mode and batch_orders:
             initially_checked = any(bo.order_code == o.order_code for bo in batch_orders)
+        else:
+            # Pre-select top 4 by default
+            initially_checked = (idx < 4)
 
         checked_attr = "checked" if initially_checked else ""
         selected_class = "selected" if initially_checked else ""
@@ -779,7 +809,7 @@ def generate_single_invoice_page(
 
       <div class="modal-toolbar">
         <input type="text" class="search-input" id="orderSearch" placeholder="🔍 Search customer name, phone, city, or order #..." oninput="filterOrders()">
-        <span class="count-badge" id="countBadge">1 / 4 selected</span>
+        <span class="count-badge" id="countBadge">4 / 4 selected</span>
       </div>
 
       <div class="modal-list" id="modalOrderList">
@@ -788,7 +818,7 @@ def generate_single_invoice_page(
 
       <div class="modal-footer">
         <div class="footer-hint" id="footerHint">
-          Select up to 4 invoices (your choice).
+          Select up to 4 invoices (fits on 1 single A4 page with default margins).
         </div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-outline" style="color:#0f172a;border-color:#cbd5e1;" onclick="closeBatchModal()">Cancel</button>
@@ -856,7 +886,7 @@ def generate_single_invoice_page(
       hint.innerText = '⚠️ Maximum 4 invoices can fit on 1 A4 page. Uncheck one to pick another.';
       setTimeout(() => {{
         hint.style.color = '#64748b';
-        hint.innerText = 'Select up to 4 invoices (your choice).';
+        hint.innerText = 'Select up to 4 invoices (fits on 1 single A4 page with default margins).';
       }}, 3000);
     }}
 
@@ -949,6 +979,11 @@ def generate_single_invoice_page(
       if (e.key === 'Escape') {{
         closeBatchModal();
       }}
+    }});
+
+    // Initialize UI on load
+    document.addEventListener('DOMContentLoaded', () => {{
+      updateSelectionUI();
     }});
   </script>
 </body>
