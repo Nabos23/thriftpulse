@@ -20,28 +20,18 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Compact inline CSS for archived invoices (replaces ~3.8KB of heavy CSS with ~400B)
+# Compact inline CSS for archived invoices (replaces heavy CSS with lightweight compact styling)
 COMPACT_INVOICE_CSS = (
     "<style>"
-    "body{font-family:monospace;padding:8px;background:#f8fafc;display:flex;justify-content:center}"
-    ".slip{width:80mm;border:1px dashed #94a3b8;padding:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.1)}"
-    ".text-center{text-align:center}.bold{font-weight:bold}"
-    ".title{font-size:15px;font-weight:900;text-transform:uppercase}"
-    ".subtitle{font-size:10px;color:#475569}"
-    ".cod-box{border:2px solid #000;text-align:center;padding:5px;margin:6px 0;background:#f8fafc}"
-    ".cod-title{font-size:10px;font-weight:bold}"
-    ".cod-amount{font-size:18px;font-weight:900}"
-    ".section-title{font-size:10px;font-weight:bold;text-transform:uppercase;margin:4px 0}"
-    ".info-row{font-size:11px;line-height:1.3;margin:2px 0}"
-    ".info-label{font-weight:bold;display:inline-block;width:70px}"
-    ".item-desc{font-size:11px;font-weight:bold;margin:3px 0}"
-    ".notes-box{font-size:10px;font-style:italic;color:#334155;background:#f1f5f9;padding:3px;margin-top:3px}"
-    ".barcode-placeholder{text-align:center;margin-top:8px;letter-spacing:4px;font-size:12px;font-weight:bold}"
-    ".divider{border-top:1px dashed #000;margin:6px 0}"
-    ".double-divider{border-top:2px solid #000;margin:6px 0}"
-    ".print-btn-bar{position:fixed;bottom:15px;right:15px}"
-    ".btn{background:#0f172a;color:#fff;padding:8px 14px;border:none;border-radius:6px;font-weight:bold;cursor:pointer}"
-    "@media print{body{padding:0;background:none}.slip{box-shadow:none;border:none;width:100%;padding:0}.print-btn-bar{display:none}}"
+    "body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:6px;background:#f8fafc;display:flex;justify-content:center}"
+    ".slip,.slip-card{width:95mm;border:1.5px solid #cbd5e1;border-radius:6px;padding:10px;background:#fff;box-sizing:border-box}"
+    ".card-top-header{display:flex;gap:8px}.header-col{flex:1}.header-v-divider{width:1px;background:#cbd5e1}"
+    ".field-label{font-size:9px;font-weight:700;color:#5b6b82;text-transform:uppercase}"
+    ".header-val{font-size:13px;font-weight:700}.underline,.header-h-divider{border-bottom:1px solid #cbd5e1;margin:3px 0}"
+    ".name-val,.phone-val{font-size:18px;font-weight:800}.city-val{font-size:14px;font-weight:700}.address-val{font-size:12px}"
+    ".dashed-divider{border-top:1px dashed #cbd5e1;margin:6px 0}.notes-box{border:1px solid #cbd5e1;border-radius:4px;min-height:40px;padding:4px;font-size:11px}"
+    ".action-toolbar,.no-print{display:none!important}"
+    "@media print{body{padding:0;background:none}.slip,.slip-card{box-shadow:none;border:1px solid #000;width:100%}}"
     "</style>"
 )
 

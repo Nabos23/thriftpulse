@@ -544,6 +544,24 @@ def update_order_sync_status_sync(order_id: int, synced: bool, invoice_path: Opt
         conn.close()
 
 
+def get_orders_by_codes_sync(codes: list[str]) -> list[Order]:
+    """Retrieve multiple orders by order codes in requested order."""
+    orders: list[Order] = []
+    for c in codes:
+        clean = c.strip()
+        if not clean:
+            continue
+        ord_obj = get_order_by_code_sync(clean)
+        if ord_obj:
+            orders.append(ord_obj)
+    return orders
+
+
+async def get_orders_by_codes(codes: list[str]) -> list[Order]:
+    return await asyncio.to_thread(get_orders_by_codes_sync, codes)
+
+
+
 async def update_order_sync_status(order_id: int, synced: bool, invoice_path: Optional[str] = None) -> None:
     await asyncio.to_thread(update_order_sync_status_sync, order_id, synced, invoice_path)
 

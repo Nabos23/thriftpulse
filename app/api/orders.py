@@ -259,19 +259,58 @@ async def create_order(
 
 
 @router.get("/invoice/{order_code}", response_class=HTMLResponse)
-async def view_invoice(order_code: str):
-    """View and print the 80mm thermal waybill for packing/courier."""
+@router.get("/api/index/invoice/{order_code}", response_class=HTMLResponse)
+async def view_invoice(order_code: str, batch: Optional[str] = None):
+    """
+    View and print modern dispatch slip.
+    Features in-page Batch Printing: owner can click 'Batch Printing' to select up to 4 invoices
+    to print together in a 2x2 grid on a single A4 page.
+    """
     order = await get_order_by_code(order_code)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    invoice_file = settings.INVOICES_DIR / f"{order.order_code}.html"
-    if invoice_file.exists():
-        return HTMLResponse(content=invoice_file.read_text(encoding="utf-8"))
+    from app.core.database import get_recent_orders, get_orders_by_codes
+    from app.services.invoice_generator import generate_single_invoice_page
 
-    # Generate if not on disk
-    from app.services.invoice_generator import generate_thermal_invoice_html
-    return HTMLResponse(content=generate_thermal_invoice_html(order))
+    recent = await get_recent_orders(limit=40)
+
+    batch_orders = None
+    if batch:
+        code_list = [c.strip() for c in batch.split(",") if c.strip()][:4]
+        batch_orders = await get_orders_by_codes(code_list)
+
+    return HTMLResponse(
+        content=generate_single_invoice_page(order, other_orders=recent, batch_orders=batch_orders)
+    )
+
+
+@router.get("/invoices", response_class=HTMLResponse)
+@router.get("/invoices/batch", response_class=HTMLResponse)
+@router.get("/invoices/print", response_class=HTMLResponse)
+@router.get("/api/index/invoices", response_class=HTMLResponse)
+@router.get("/api/index/invoices/batch", response_class=HTMLResponse)
+@router.get("/api/index/invoices/print", response_class=HTMLResponse)
+async def view_batch_invoices(
+    codes: Optional[str] = None,
+    limit: int = 24,
+):
+    """
+    Batch print multiple dispatch slips packed 4-per-page (2x2 grid) on A4 paper.
+    Supports:
+    - ?codes=TS-1001,TS-1002,TS-1003,TS-1004 (explicit order codes)
+    - Defaults to recent orders with an interactive checkbox selector for warehouse packers.
+    """
+    from app.services.invoice_generator import generate_batch_invoices_page
+    from app.core.database import get_orders_by_codes, get_recent_orders
+
+    if codes:
+        code_list = [c.strip() for c in codes.split(",") if c.strip()]
+        orders = await get_orders_by_codes(code_list)
+    else:
+        orders = await get_recent_orders(limit=limit)
+
+    return HTMLResponse(content=generate_batch_invoices_page(orders))
 
 
 @router.get("/static/uploads/shoes/{filename}")

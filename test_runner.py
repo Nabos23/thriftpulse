@@ -92,11 +92,27 @@ def test_end_to_end():
     assert resp_webhook.text == "test_challenge_123"
     print("✓ GET /webhook challenge verified with 200 OK")
 
-    # GET /invoice/{order_code}
+    # GET /invoice/{order_code} (Single slip)
     resp_inv = client.get(f"/invoice/{order.order_code}")
     assert resp_inv.status_code == 200
     assert order.order_code in resp_inv.text
-    print(f"✓ GET /invoice/{order.order_code} served successfully with 200 OK")
+    assert "CUSTOMER NAME" in resp_inv.text
+    assert "PHONE NUMBER" in resp_inv.text
+    assert "SHOE" in resp_inv.text
+    assert "SIZE" in resp_inv.text
+    print(f"✓ GET /invoice/{order.order_code} (Single) served successfully with 200 OK")
+
+    # Verify in-page Batch Printing option & modal exist
+    assert "Batch Printing" in resp_inv.text
+    assert "batchModal" in resp_inv.text
+    assert "order-chk" in resp_inv.text
+    print(f"✓ GET /invoice/{order.order_code} (Single & Batch Modal) served successfully with 200 OK")
+
+    # GET /invoices/batch (Batch 4-per-page sheet)
+    resp_batch = client.get("/invoices/batch")
+    assert resp_batch.status_code == 200
+    assert "page-sheet" in resp_batch.text
+    print("✓ GET /invoices/batch served successfully with 200 OK")
 
     # POST /api/orders with dummy image
     dummy_image = io.BytesIO(b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb\x00C\x00")
