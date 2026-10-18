@@ -70,9 +70,17 @@ class Settings(BaseSettings):
     GOOGLE_TOKEN_PATH: str = "google_token.json"
     GOOGLE_CREDENTIALS_PATH: str = "google_credentials.json"
 
-    # Database
+    # Database (Turso Cloud LibSQL or local SQLite fallback)
     DATABASE_URL: str = "sqlite+aiosqlite:///thrift_orders.db"
     SYNC_DATABASE_URL: str = "sqlite:///thrift_orders.db"
+    TURSO_DATABASE_URL: str = ""
+    TURSO_AUTH_TOKEN: str = ""
+
+    # Cloudinary Image CDN (for permanent image persistence across serverless container restarts)
+    CLOUDINARY_URL: str = ""
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
 
     # App & Network
     ENVIRONMENT: str = "development"

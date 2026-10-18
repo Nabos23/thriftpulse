@@ -57,7 +57,13 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
     # Always prioritize public BASE_URL for external links if on localhost
     public_base = settings.BASE_URL if ("localhost" in base_url or "127.0.0.1" in base_url) else base_url
     invoice_url = f"{public_base}/invoice/{order.order_code}"
-    image_full_url = f"{public_base}/{order.shoe_image_path.lstrip('/')}" if order.shoe_image_path else ""
+    if order.shoe_image_path:
+        if order.shoe_image_path.startswith("http://") or order.shoe_image_path.startswith("https://"):
+            image_full_url = order.shoe_image_path
+        else:
+            image_full_url = f"{public_base}/{order.shoe_image_path.lstrip('/')}"
+    else:
+        image_full_url = ""
 
     # Mode A: If configured to strictly use Meta Message Template (outside 24h window)
     if settings.USE_TEMPLATE_FOR_ALERTS:
@@ -111,19 +117,23 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
             invoice_code=order.order_code,
         )
     else:
-        # Dispatch shoe photo via binary upload (works on Vercel /tmp too)
+        # Dispatch shoe photo (Cloudinary URL or local binary upload)
         if order.shoe_image_path:
             caption = f"👟 Shoe for Order #{order.order_code} - {order.customer_name}"
-            filename = Path(order.shoe_image_path).name
-            candidates = [
-                Path("/tmp") / "uploads" / "shoes" / filename,   # Vercel
-                settings.BASE_DIR / "app" / order.shoe_image_path.lstrip("/"),  # local dev
-                settings.UPLOADS_DIR / filename,                  # config fallback
-            ]
-            for disk_path in candidates:
-                if disk_path.exists():
-                    wa.send_image_file(owner_phone, str(disk_path), caption=caption)
-                    break
+            if order.shoe_image_path.startswith("http://") or order.shoe_image_path.startswith("https://"):
+                img_res = wa.send_image(owner_phone, order.shoe_image_path, caption=caption)
+                logger.info("owner_alert_image_url_sent", result=img_res)
+            else:
+                filename = Path(order.shoe_image_path).name
+                candidates = [
+                    Path("/tmp") / "uploads" / "shoes" / filename,   # Vercel
+                    settings.BASE_DIR / "app" / order.shoe_image_path.lstrip("/"),  # local dev
+                    settings.UPLOADS_DIR / filename,                  # config fallback
+                ]
+                for disk_path in candidates:
+                    if disk_path.exists():
+                        wa.send_image_file(owner_phone, str(disk_path), caption=caption)
+                        break
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -167,19 +177,43 @@ async def create_order(
     os.makedirs(settings.UPLOADS_DIR, exist_ok=True)
     os.makedirs(settings.INVOICES_DIR, exist_ok=True)
 
-    # Save uploaded image
+    # Process and save uploaded image
     unique_suffix = uuid.uuid4().hex[:8]
     ext = Path(shoe_photo.filename or "photo.jpg").suffix.lower() or ".jpg"
     image_filename = f"shoe_{unique_suffix}{ext}"
-    image_disk_path = settings.UPLOADS_DIR / image_filename
 
     image_bytes = await shoe_photo.read()
-    with open(image_disk_path, "wb") as f:
-        f.write(image_bytes)
 
-    relative_image_path = f"/static/uploads/shoes/{image_filename}"
+    # Step A: Attempt Cloudinary upload (permanent CDN)
+    final_image_path = None
+    try:
+        from app.connectors.cloudinary_client import get_cloudinary_client
+        cclient = get_cloudinary_client()
+        if cclient.is_configured():
+            final_image_path = cclient.upload_image_bytes(
+                image_bytes,
+                filename=image_filename,
+                folder="shoes",
+            )
+            if final_image_path:
+                logger.info("order_image_uploaded_to_cloudinary", url=final_image_path)
+    except Exception as e:
+        logger.error("cloudinary_upload_in_order_create_failed", error=str(e))
 
-    # Insert order in SQLite
+    # Step B: Also save local copy if writable (fallback or local preview)
+    try:
+        os.makedirs(settings.UPLOADS_DIR, exist_ok=True)
+        image_disk_path = settings.UPLOADS_DIR / image_filename
+        with open(image_disk_path, "wb") as f:
+            f.write(image_bytes)
+        if not final_image_path:
+            final_image_path = f"/static/uploads/shoes/{image_filename}"
+    except Exception as e:
+        logger.warning("local_uploads_disk_write_warning", error=str(e))
+        if not final_image_path:
+            final_image_path = ""
+
+    # Insert order in Turso Cloud / SQLite
     order_data = {
         "customer_name": customer_name.strip(),
         "phone_primary": phone_primary.strip(),
@@ -193,7 +227,7 @@ async def create_order(
         "price": price,
         "payment_method": payment_method.strip(),
         "notes": (notes or "").strip(),
-        "shoe_image_path": relative_image_path,
+        "shoe_image_path": final_image_path,
         "status": "Pending",
         "sheets_synced": False,
     }
