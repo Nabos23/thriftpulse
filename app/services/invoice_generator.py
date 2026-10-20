@@ -22,19 +22,16 @@ def _escape(text: Optional[str]) -> str:
     return html.escape(str(text or "").strip())
 
 
-def render_slip_card_html(order: Order, hide_meta: bool = False) -> str:
+def render_slip_card_html(order: Order, hide_meta: bool = True) -> str:
     """
     Renders an individual minimalist dispatch slip card.
-    Faithfully matches the client's reference design:
+    Contains:
     - SHOE & SIZE header: Shoe name gets maximum room, SIZE is positioned in the right corner.
     - Clean horizontal divider
     - CUSTOMER NAME (large bold)
     - PHONE NUMBER (large bold)
     - CITY (bold)
     - ADDRESS (clear multiline text)
-    - Subtle dashed divider
-    - NOTES box (open bordered box for instructions/notes)
-    - Subtle discrete slip ID/tracking footer
     """
     customer_name = _escape(order.customer_name)
     phone_primary = _escape(order.phone_primary)
@@ -43,21 +40,9 @@ def render_slip_card_html(order: Order, hide_meta: bool = False) -> str:
     address = _escape(order.full_address or order.address)
     shoe_name = _escape(order.shoe_brand_model)
     shoe_size = _escape(order.shoe_size)
-    notes = _escape(order.notes)
     order_code = _escape(order.order_code)
-    payment_method = _escape(order.payment_method or "Cash on Delivery")
-    price_fmt = f"PKR {order.price:,.0f}"
 
     secondary_html = f' <span class="alt-phone">({phone_secondary})</span>' if phone_secondary else ""
-    notes_content = notes if notes else ""
-
-    meta_footer_html = ""
-    if not hide_meta:
-        meta_footer_html = f"""
-    <div class="card-meta-footer">
-      <span class="meta-code">#{order_code}</span>
-      <span class="meta-payment">{price_fmt} &bull; {payment_method}</span>
-    </div>"""
 
     return f"""
     <div class="slip-card" data-order-code="{order_code}">
@@ -104,15 +89,6 @@ def render_slip_card_html(order: Order, hide_meta: bool = False) -> str:
           <div class="field-val address-val">{address}</div>
         </div>
       </div>
-
-      <div class="dashed-divider"></div>
-
-      <!-- Notes Section -->
-      <div class="notes-section">
-        <div class="field-label">NOTES</div>
-        <div class="notes-box">{notes_content}</div>
-      </div>
-      {meta_footer_html}
     </div>
     """
 
@@ -147,7 +123,7 @@ def get_common_css() -> str:
       padding: 10px 14px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-start;
       box-sizing: border-box;
       position: relative;
       overflow: hidden;
@@ -282,54 +258,8 @@ def get_common_css() -> str:
       font-size: 12px;
       font-weight: 500;
       color: #0f172a;
-      line-height: 1.3;
+      line-height: 1.35;
       word-break: break-word;
-    }
-
-    /* Dashed line */
-    .dashed-divider {
-      border-top: 1.5px dashed #cbd5e1;
-      width: 100%;
-      margin: 7px 0 7px 0;
-    }
-
-    /* Notes */
-    .notes-section {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 2px;
-    }
-
-    .notes-box {
-      border: 1.5px solid #cbd5e1;
-      border-radius: 6px;
-      min-height: 38px;
-      max-height: 52px;
-      padding: 4px 8px;
-      font-size: 11px;
-      line-height: 1.3;
-      color: #334155;
-      background-color: #ffffff;
-      word-break: break-word;
-      white-space: pre-wrap;
-      overflow: hidden;
-    }
-
-    /* Subtle slip footer */
-    .card-meta-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 4px;
-      font-size: 9px;
-      color: #94a3b8;
-      font-weight: 500;
-      letter-spacing: 0.3px;
-    }
-
-    .meta-code {
-      font-weight: 700;
-      color: #64748b;
     }
 
     /* ── Action Toolbar (Screen Only) ── */
@@ -408,20 +338,21 @@ def get_common_css() -> str:
       box-sizing: border-box;
       background: #ffffff;
       box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-      margin: 70px auto 30px auto;
+      margin: 60px auto 30px auto;
       width: 210mm;
       max-width: 195mm;
       padding: 4mm;
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(2, 1fr);
-      gap: 4mm 6mm;
+      grid-template-rows: auto auto;
+      gap: 5mm 6mm;
     }
 
     /* Sizing for 4 cards per sheet */
     .page-sheet .slip-card {
-      height: 118mm;
-      max-height: 120mm;
+      min-height: 72mm;
+      max-height: 88mm;
+      height: auto;
       padding: 10px 12px;
     }
 
@@ -430,8 +361,8 @@ def get_common_css() -> str:
       width: 100mm;
     }
     .single-view-container .slip-card {
-      min-height: 125mm;
-      padding: 16px 18px;
+      min-height: 75mm;
+      padding: 14px 16px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
 
@@ -606,7 +537,7 @@ def get_common_css() -> str:
     /* ── @media print for flawless 4-per-page A4 printing (Works on Default Margins) ── */
     @page {
       size: A4 portrait;
-      margin: 4mm 6mm;
+      margin: 8mm 8mm;
     }
 
     @media print {
@@ -634,6 +565,9 @@ def get_common_css() -> str:
         border: 1.5px solid #000 !important;
         width: 100% !important;
         max-width: 95mm !important;
+        height: auto !important;
+        min-height: 72mm !important;
+        max-height: 88mm !important;
         page-break-inside: avoid;
         break-inside: avoid;
       }
@@ -644,12 +578,12 @@ def get_common_css() -> str:
         width: 100% !important;
         max-width: 190mm !important;
         height: auto !important;
-        max-height: 242mm !important;
+        max-height: 185mm !important;
         padding: 0 !important;
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
-        grid-template-rows: repeat(2, 1fr) !important;
-        gap: 3mm 5mm !important;
+        grid-template-rows: auto auto !important;
+        gap: 5mm 6mm !important;
         page-break-after: always !important;
         break-after: page !important;
         box-sizing: border-box !important;
@@ -661,13 +595,14 @@ def get_common_css() -> str:
       }
 
       .page-sheet .slip-card {
-        height: 118mm !important;
-        max-height: 119mm !important;
+        height: auto !important;
+        min-height: 72mm !important;
+        max-height: 88mm !important;
         box-sizing: border-box !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
         border: 1.5px solid #cbd5e1 !important;
-        padding: 9px 12px !important;
+        padding: 10px 12px !important;
         overflow: hidden !important;
       }
     }

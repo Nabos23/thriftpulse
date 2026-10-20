@@ -59,13 +59,17 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
     # Always prioritize public BASE_URL for external links if on localhost
     public_base = settings.BASE_URL if ("localhost" in base_url or "127.0.0.1" in base_url) else base_url
     invoice_url = f"{public_base}/invoice/{order.order_code}"
-    if order.shoe_image_path:
-        if order.shoe_image_path.startswith("http://") or order.shoe_image_path.startswith("https://"):
-            image_full_url = order.shoe_image_path
+    raw_photos = [p.strip() for p in (order.shoe_image_path or "").split(",") if p.strip()]
+    if raw_photos:
+        first_photo = raw_photos[0]
+        if first_photo.startswith("http://") or first_photo.startswith("https://"):
+            primary_image_url = first_photo
         else:
-            image_full_url = f"{public_base}/{order.shoe_image_path.lstrip('/')}"
+            primary_image_url = f"{public_base}/{first_photo.lstrip('/')}"
     else:
-        image_full_url = ""
+        primary_image_url = ""
+
+    photo_notice = f"_({len(raw_photos)} shoe photos attached below)_ 👇" if len(raw_photos) > 1 else "_(Shoe photo attached below)_ 👇"
 
     alert_text = (
         f"🚨 *NEW ORDER RECEIVED!* 🚨\n"
@@ -81,7 +85,7 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
         + (f"📝 *Note:* {order.notes}\n" if order.notes else "") +
         f"━━━━━━━━━━━━━━━━━━\n"
         f"📄 *1-Tap Print Slip:* {invoice_url}\n"
-        f"_(Shoe photo attached below)_ 👇"
+        f"{photo_notice}"
     )
 
     for owner_phone in target_phones:
@@ -98,7 +102,7 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
                 city=order.city,
                 shoe_item=f"{order.shoe_brand_model} ({order.shoe_size})",
                 amount=f"PKR {order.price:,.0f}",
-                image_url=image_full_url or None,
+                image_url=primary_image_url or None,
                 invoice_code=order.order_code,
             )
             logger.info("owner_template_alert_sent", to=owner_phone, status=template_res.get("status"))
@@ -119,27 +123,34 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
                 city=order.city,
                 shoe_item=f"{order.shoe_brand_model} ({order.shoe_size})",
                 amount=f"PKR {order.price:,.0f}",
-                image_url=image_full_url or None,
+                image_url=primary_image_url or None,
                 invoice_code=order.order_code,
             )
         else:
-            # Dispatch shoe photo (Cloudinary URL or local binary upload)
+            # Dispatch all shoe photos (Cloudinary URL or local binary upload)
             if order.shoe_image_path:
-                caption = f"👟 Shoe for Order #{order.order_code} - {order.customer_name}"
-                if order.shoe_image_path.startswith("http://") or order.shoe_image_path.startswith("https://"):
-                    img_res = wa.send_image(owner_phone, order.shoe_image_path, caption=caption)
-                    logger.info("owner_alert_image_url_sent", to=owner_phone, result=img_res)
-                else:
-                    filename = Path(order.shoe_image_path).name
-                    candidates = [
-                        Path("/tmp") / "uploads" / "shoes" / filename,   # Vercel
-                        settings.BASE_DIR / "app" / order.shoe_image_path.lstrip("/"),  # local dev
-                        settings.UPLOADS_DIR / filename,                  # config fallback
-                    ]
-                    for disk_path in candidates:
-                        if disk_path.exists():
-                            wa.send_image_file(owner_phone, str(disk_path), caption=caption)
-                            break
+                raw_paths = [p.strip() for p in order.shoe_image_path.split(",") if p.strip()]
+                total_imgs = len(raw_paths)
+                for idx, single_path in enumerate(raw_paths):
+                    if total_imgs > 1:
+                        caption = f"👟 Shoe Photo {idx + 1}/{total_imgs} for Order #{order.order_code} - {order.customer_name}"
+                    else:
+                        caption = f"👟 Shoe for Order #{order.order_code} - {order.customer_name}"
+
+                    if single_path.startswith("http://") or single_path.startswith("https://"):
+                        img_res = wa.send_image(owner_phone, single_path, caption=caption)
+                        logger.info("owner_alert_image_url_sent", to=owner_phone, img_index=idx + 1, result=img_res)
+                    else:
+                        filename = Path(single_path).name
+                        candidates = [
+                            Path("/tmp") / "uploads" / "shoes" / filename,   # Vercel
+                            settings.BASE_DIR / "app" / single_path.lstrip("/"),  # local dev
+                            settings.UPLOADS_DIR / filename,                  # config fallback
+                        ]
+                        for disk_path in candidates:
+                            if disk_path.exists():
+                                wa.send_image_file(owner_phone, str(disk_path), caption=caption)
+                                break
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -170,54 +181,74 @@ async def create_order(
     price: float = Form(...),
     payment_method: str = Form("Cash on Delivery"),
     notes: Optional[str] = Form(""),
-    shoe_photo: UploadFile = File(...),
+    shoe_photo: Optional[UploadFile] = File(None),
+    shoe_photos: Optional[list[UploadFile]] = File(None),
 ):
     """
     Handle order submission:
-    - Save compressed shoe image
-    - Insert record into SQLite
+    - Save compressed shoe image(s) to Cloudinary (or local fallback)
+    - Insert record into Turso Cloud / SQLite
     - Generate printable waybill/invoice
     - Schedule Google Sheets sync + Owner WhatsApp notification
     """
+    # Collect all uploaded photos
+    incoming_files: list[UploadFile] = []
+    if shoe_photos:
+        incoming_files.extend([f for f in shoe_photos if f and f.filename])
+    
+    # Fallback to single shoe_photo if shoe_photos was not provided
+    if not incoming_files and shoe_photo and shoe_photo.filename:
+        incoming_files.append(shoe_photo)
+
+    if not incoming_files:
+        raise HTTPException(status_code=400, detail="At least one shoe photo is required.")
+
     # Ensure directories exist
     os.makedirs(settings.UPLOADS_DIR, exist_ok=True)
     os.makedirs(settings.INVOICES_DIR, exist_ok=True)
 
-    # Process and save uploaded image
-    unique_suffix = uuid.uuid4().hex[:8]
-    ext = Path(shoe_photo.filename or "photo.jpg").suffix.lower() or ".jpg"
-    image_filename = f"shoe_{unique_suffix}{ext}"
-
-    image_bytes = await shoe_photo.read()
-
-    # Step A: Attempt Cloudinary upload (permanent CDN)
-    final_image_path = None
+    cclient = None
     try:
         from app.connectors.cloudinary_client import get_cloudinary_client
         cclient = get_cloudinary_client()
-        if cclient.is_configured():
-            final_image_path = cclient.upload_image_bytes(
-                image_bytes,
-                filename=image_filename,
-                folder="shoes",
-            )
-            if final_image_path:
-                logger.info("order_image_uploaded_to_cloudinary", url=final_image_path)
     except Exception as e:
-        logger.error("cloudinary_upload_in_order_create_failed", error=str(e))
+        logger.error("cloudinary_client_init_error", error=str(e))
 
-    # Step B: Also save local copy if writable (fallback or local preview)
-    try:
-        os.makedirs(settings.UPLOADS_DIR, exist_ok=True)
-        image_disk_path = settings.UPLOADS_DIR / image_filename
-        with open(image_disk_path, "wb") as f:
-            f.write(image_bytes)
-        if not final_image_path:
-            final_image_path = f"/static/uploads/shoes/{image_filename}"
-    except Exception as e:
-        logger.warning("local_uploads_disk_write_warning", error=str(e))
-        if not final_image_path:
-            final_image_path = ""
+    uploaded_urls: list[str] = []
+    for idx, photo_file in enumerate(incoming_files):
+        unique_suffix = uuid.uuid4().hex[:8]
+        ext = Path(photo_file.filename or "photo.jpg").suffix.lower() or ".jpg"
+        image_filename = f"shoe_{unique_suffix}_{idx + 1}{ext}"
+        image_bytes = await photo_file.read()
+
+        # Step A: Attempt Cloudinary upload (permanent CDN)
+        cloudinary_url = None
+        if cclient and cclient.is_configured():
+            try:
+                cloudinary_url = cclient.upload_image_bytes(
+                    image_bytes,
+                    filename=image_filename,
+                    folder="shoes",
+                )
+                if cloudinary_url:
+                    logger.info("order_image_uploaded_to_cloudinary", url=cloudinary_url, file_idx=idx + 1)
+            except Exception as e:
+                logger.error("cloudinary_upload_in_order_create_failed", error=str(e), file_idx=idx + 1)
+
+        # Step B: Also save local copy if writable (fallback or local preview)
+        try:
+            image_disk_path = settings.UPLOADS_DIR / image_filename
+            with open(image_disk_path, "wb") as f:
+                f.write(image_bytes)
+            if not cloudinary_url:
+                cloudinary_url = f"/static/uploads/shoes/{image_filename}"
+        except Exception as e:
+            logger.warning("local_uploads_disk_write_warning", error=str(e))
+
+        if cloudinary_url:
+            uploaded_urls.append(cloudinary_url)
+
+    final_image_path = ", ".join(uploaded_urls)
 
     # Insert order in Turso Cloud / SQLite
     order_data = {

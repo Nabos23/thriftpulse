@@ -215,12 +215,16 @@ class GoogleSheetsSync:
             if ("localhost" in b or "127.0.0.1" in b) and settings.BASE_URL and "localhost" not in settings.BASE_URL:
                 b = settings.BASE_URL.rstrip("/")
 
-            # Clickable Photo URL
+            # Clickable Photo URL(s)
             if order.shoe_image_path:
-                if order.shoe_image_path.startswith("http://") or order.shoe_image_path.startswith("https://"):
-                    photo_url = order.shoe_image_path
-                else:
-                    photo_url = f"{b}/{order.shoe_image_path.lstrip('/')}"
+                raw_items = [p.strip() for p in order.shoe_image_path.split(",") if p.strip()]
+                formatted_urls = []
+                for p in raw_items:
+                    if p.startswith("http://") or p.startswith("https://"):
+                        formatted_urls.append(p)
+                    else:
+                        formatted_urls.append(f"{b}/{p.lstrip('/')}")
+                photo_url = ", ".join(formatted_urls)
             else:
                 photo_url = ""
 
