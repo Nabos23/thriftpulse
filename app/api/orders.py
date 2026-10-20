@@ -50,9 +50,11 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
     from app.core.database import update_order_sync_status_sync
     update_order_sync_status_sync(order.id, synced, order.invoice_path)
 
-    # Step 2: Notify Owner via WhatsApp (Deterministic Outbound - No Agent)
+    # Step 2: Notify Owner(s) via WhatsApp (Deterministic Outbound - No Agent)
     wa = get_whatsapp_client()
-    owner_phone = settings.OWNER_PHONE_NUMBER
+    target_phones = settings.owner_phones
+    if not target_phones and settings.OWNER_PHONE_NUMBER:
+        target_phones = [settings.normalize_phone(settings.OWNER_PHONE_NUMBER)]
 
     # Always prioritize public BASE_URL for external links if on localhost
     public_base = settings.BASE_URL if ("localhost" in base_url or "127.0.0.1" in base_url) else base_url
@@ -65,23 +67,6 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
     else:
         image_full_url = ""
 
-    # Mode A: If configured to strictly use Meta Message Template (outside 24h window)
-    if settings.USE_TEMPLATE_FOR_ALERTS:
-        template_res = wa.send_order_alert_template(
-            to=owner_phone,
-            order_code=order.order_code,
-            customer_name=order.customer_name,
-            phone=order.phone_primary,
-            city=order.city,
-            shoe_item=f"{order.shoe_brand_model} ({order.shoe_size})",
-            amount=f"PKR {order.price:,.0f}",
-            image_url=image_full_url or None,
-            invoice_code=order.order_code,
-        )
-        logger.info("owner_template_alert_sent", status=template_res.get("status"))
-        return
-
-    # Mode B: Standard Free-Form Rich Message (Inside 24h window)
     alert_text = (
         f"🚨 *NEW ORDER RECEIVED!* 🚨\n"
         f"━━━━━━━━━━━━━━━━━━\n"
@@ -99,41 +84,62 @@ def _notify_owner_task(order: Order, base_url: str) -> None:
         f"_(Shoe photo attached below)_ 👇"
     )
 
-    send_res = wa.send_text(owner_phone, alert_text)
+    for owner_phone in target_phones:
+        if not owner_phone:
+            continue
 
-    # Automatic Fallback: If free-form failed because 24-hour window is closed, try template
-    if send_res.get("status") == "error":
-        err_str = str(send_res.get("error", ""))
-        logger.warning("freeform_failed_trying_template", error=err_str)
-        wa.send_order_alert_template(
-            to=owner_phone,
-            order_code=order.order_code,
-            customer_name=order.customer_name,
-            phone=order.phone_primary,
-            city=order.city,
-            shoe_item=f"{order.shoe_brand_model} ({order.shoe_size})",
-            amount=f"PKR {order.price:,.0f}",
-            image_url=image_full_url or None,
-            invoice_code=order.order_code,
-        )
-    else:
-        # Dispatch shoe photo (Cloudinary URL or local binary upload)
-        if order.shoe_image_path:
-            caption = f"👟 Shoe for Order #{order.order_code} - {order.customer_name}"
-            if order.shoe_image_path.startswith("http://") or order.shoe_image_path.startswith("https://"):
-                img_res = wa.send_image(owner_phone, order.shoe_image_path, caption=caption)
-                logger.info("owner_alert_image_url_sent", result=img_res)
-            else:
-                filename = Path(order.shoe_image_path).name
-                candidates = [
-                    Path("/tmp") / "uploads" / "shoes" / filename,   # Vercel
-                    settings.BASE_DIR / "app" / order.shoe_image_path.lstrip("/"),  # local dev
-                    settings.UPLOADS_DIR / filename,                  # config fallback
-                ]
-                for disk_path in candidates:
-                    if disk_path.exists():
-                        wa.send_image_file(owner_phone, str(disk_path), caption=caption)
-                        break
+        # Mode A: If configured to strictly use Meta Message Template (outside 24h window)
+        if settings.USE_TEMPLATE_FOR_ALERTS:
+            template_res = wa.send_order_alert_template(
+                to=owner_phone,
+                order_code=order.order_code,
+                customer_name=order.customer_name,
+                phone=order.phone_primary,
+                city=order.city,
+                shoe_item=f"{order.shoe_brand_model} ({order.shoe_size})",
+                amount=f"PKR {order.price:,.0f}",
+                image_url=image_full_url or None,
+                invoice_code=order.order_code,
+            )
+            logger.info("owner_template_alert_sent", to=owner_phone, status=template_res.get("status"))
+            continue
+
+        # Mode B: Standard Free-Form Rich Message (Inside 24h window)
+        send_res = wa.send_text(owner_phone, alert_text)
+
+        # Automatic Fallback: If free-form failed because 24-hour window is closed, try template
+        if send_res.get("status") == "error":
+            err_str = str(send_res.get("error", ""))
+            logger.warning("freeform_failed_trying_template", to=owner_phone, error=err_str)
+            wa.send_order_alert_template(
+                to=owner_phone,
+                order_code=order.order_code,
+                customer_name=order.customer_name,
+                phone=order.phone_primary,
+                city=order.city,
+                shoe_item=f"{order.shoe_brand_model} ({order.shoe_size})",
+                amount=f"PKR {order.price:,.0f}",
+                image_url=image_full_url or None,
+                invoice_code=order.order_code,
+            )
+        else:
+            # Dispatch shoe photo (Cloudinary URL or local binary upload)
+            if order.shoe_image_path:
+                caption = f"👟 Shoe for Order #{order.order_code} - {order.customer_name}"
+                if order.shoe_image_path.startswith("http://") or order.shoe_image_path.startswith("https://"):
+                    img_res = wa.send_image(owner_phone, order.shoe_image_path, caption=caption)
+                    logger.info("owner_alert_image_url_sent", to=owner_phone, result=img_res)
+                else:
+                    filename = Path(order.shoe_image_path).name
+                    candidates = [
+                        Path("/tmp") / "uploads" / "shoes" / filename,   # Vercel
+                        settings.BASE_DIR / "app" / order.shoe_image_path.lstrip("/"),  # local dev
+                        settings.UPLOADS_DIR / filename,                  # config fallback
+                    ]
+                    for disk_path in candidates:
+                        if disk_path.exists():
+                            wa.send_image_file(owner_phone, str(disk_path), caption=caption)
+                            break
 
 
 @router.get("/", response_class=HTMLResponse)

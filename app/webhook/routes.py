@@ -27,15 +27,11 @@ router = APIRouter(prefix="/webhook", tags=["webhook"])
 
 
 def _is_owner(phone: str) -> bool:
-    """Check if the sender phone number belongs to the store owner/admin."""
-    clean = phone.replace("+", "").strip()
-    owner_clean = settings.OWNER_PHONE_NUMBER.replace("+", "").strip()
-    if clean == owner_clean:
-        return True
-    for o in settings.OWNER_PHONE_NUMBERS:
-        if clean == o.replace("+", "").strip():
-            return True
-    return False
+    """Check if the sender phone number belongs to any authorized store owner/admin."""
+    clean_sender = settings.normalize_phone(phone)
+    if not clean_sender:
+        return False
+    return clean_sender in settings.owner_phones
 
 
 @router.get("")

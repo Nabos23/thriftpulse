@@ -34,9 +34,9 @@ class Settings(BaseSettings):
     WHATSAPP_ORDER_TEMPLATE: str = "thrift_new_order_alert"
     USE_TEMPLATE_FOR_ALERTS: bool = False  # Set to True when template is registered in Meta Business Manager
 
-    # Owner / Admin Contacts
-    OWNER_PHONE_NUMBER: str = "923129214688"
-    OWNER_PHONE_NUMBERS: list[str] = ["923129214688"]
+    # Owner / Admin Contacts (supports single or comma-separated list)
+    OWNER_PHONE_NUMBER: str = ""
+    OWNER_PHONE_NUMBERS: str = ""
 
     # LLM Settings (OpenRouter / Groq / OpenAI)
     # Modes: "auto" (prefers OpenRouter if key set, else Groq, else OpenAI), "openrouter", "groq", "openai"
@@ -104,6 +104,38 @@ class Settings(BaseSettings):
             "Authorization": f"Bearer {self.WHATSAPP_ACCESS_TOKEN}",
             "Content-Type": "application/json",
         }
+
+    @staticmethod
+    def normalize_phone(phone: str) -> str:
+        """Standardize phone to international digits-only (e.g. 923129214688)."""
+        import re
+        digits = re.sub(r"\D", "", phone or "")
+        if not digits:
+            return ""
+        if digits.startswith("03") and len(digits) == 11:
+            digits = "92" + digits[1:]
+        elif digits.startswith("00"):
+            digits = digits[2:]
+        return digits
+
+    @property
+    def owner_phones(self) -> list[str]:
+        """
+        Return a clean, deduplicated list of normalized owner phone numbers
+        from OWNER_PHONE_NUMBERS and/or OWNER_PHONE_NUMBER.
+        """
+        raw_items: list[str] = []
+        if self.OWNER_PHONE_NUMBERS:
+            raw_items.extend(self.OWNER_PHONE_NUMBERS.split(","))
+        if self.OWNER_PHONE_NUMBER:
+            raw_items.extend(self.OWNER_PHONE_NUMBER.split(","))
+
+        phones: list[str] = []
+        for item in raw_items:
+            norm = self.normalize_phone(item.strip())
+            if norm and norm not in phones:
+                phones.append(norm)
+        return phones
 
 
 settings = Settings()
