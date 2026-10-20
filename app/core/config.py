@@ -90,7 +90,7 @@ class Settings(BaseSettings):
     BASE_URL: str = "https://crave-pendant-moonscape.ngrok-free.dev"
 
     # Store Branding
-    STORE_NAME: str = "Thrifted Shoes PK"
+    STORE_NAME: str = "Thrifteddripss"
     STORE_TAGLINE: str = "Premium Pre-Loved Sneakers & Footwear"
     STORE_CONTACT: str = "+92 312 9214688"
 

@@ -186,7 +186,7 @@ GROQ_WHISPER_MODEL=whisper-large-v3-turbo
 # App Configuration
 ENVIRONMENT=production
 BASE_URL=https://<your-project>.vercel.app
-STORE_NAME=Thrifted Shoes PK
+STORE_NAME=Thrifteddripss
 STORE_TAGLINE=Premium Pre-Loved Sneakers & Footwear
 STORE_CONTACT=+92 312 9214688
 ```
