@@ -470,11 +470,11 @@
         <div class="form-row">
           <div class="form-group">
             <label>Primary Phone / WhatsApp <span class="req">*</span></label>
-            <input type="tel" id="phone_primary" placeholder="03XXXXXXXXX" required>
+            <input type="tel" id="phone_primary" name="phone_primary" placeholder="03xxxxxxxxx" maxlength="11" pattern="03[0-9]{9}" inputmode="numeric" autocomplete="tel" title="11-digit phone number starting with 03 (e.g. 03xxxxxxxxx)" required>
           </div>
           <div class="form-group">
             <label>Alternate Phone <span style="color:#64748b;">(Optional)</span></label>
-            <input type="tel" id="phone_secondary" placeholder="03XXXXXXXXX">
+            <input type="tel" id="phone_secondary" name="phone_secondary" placeholder="03xxxxxxxxx" maxlength="11" pattern="03[0-9]{9}" inputmode="numeric" autocomplete="tel" title="11-digit phone number starting with 03 (e.g. 03xxxxxxxxx)">
           </div>
         </div>
 
@@ -662,6 +662,23 @@
       });
     }
 
+    // Restrict phone number inputs: numbers only, limit to 11 digits, example: 03xxxxxxxxx
+    ['phone_primary', 'phone_secondary'].forEach((id) => {
+      const input = document.getElementById(id);
+      if (!input) return;
+
+      const sanitizePhone = () => {
+        let val = input.value.replace(/\D/g, '');
+        if (val.startsWith('92') && val.length > 10) {
+          val = '0' + val.slice(2);
+        }
+        input.value = val.slice(0, 11);
+      };
+
+      input.addEventListener('input', sanitizePhone);
+      input.addEventListener('paste', () => setTimeout(sanitizePhone, 0));
+    });
+
     // Form Submission
     const orderForm = document.getElementById('orderForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -674,6 +691,21 @@
 
       if (uploadedPhotos.length === 0) {
         alert('Please select and upload at least one picture of the shoes.');
+        return;
+      }
+
+      const phonePrimaryVal = document.getElementById('phone_primary').value.trim();
+      const phoneSecondaryVal = document.getElementById('phone_secondary').value.trim();
+
+      if (phonePrimaryVal.length !== 11 || !phonePrimaryVal.startsWith('03')) {
+        alert('Primary phone number must be 11 digits starting with 03 (e.g. 03xxxxxxxxx).');
+        document.getElementById('phone_primary').focus();
+        return;
+      }
+
+      if (phoneSecondaryVal && (phoneSecondaryVal.length !== 11 || !phoneSecondaryVal.startsWith('03'))) {
+        alert('Alternate phone number must be 11 digits starting with 03 (e.g. 03xxxxxxxxx).');
+        document.getElementById('phone_secondary').focus();
         return;
       }
 

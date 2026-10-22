@@ -250,11 +250,26 @@ async def create_order(
 
     final_image_path = ", ".join(uploaded_urls)
 
+    # Clean and cap phone numbers to 11 digits (e.g. 03xxxxxxxxx)
+    clean_phone_primary = "".join(filter(str.isdigit, phone_primary or ""))
+    if clean_phone_primary.startswith("92") and len(clean_phone_primary) == 12:
+        clean_phone_primary = "0" + clean_phone_primary[2:]
+    if len(clean_phone_primary) > 11:
+        clean_phone_primary = clean_phone_primary[:11]
+    if not clean_phone_primary:
+        clean_phone_primary = phone_primary.strip()
+
+    clean_phone_secondary = "".join(filter(str.isdigit, phone_secondary or ""))
+    if clean_phone_secondary.startswith("92") and len(clean_phone_secondary) == 12:
+        clean_phone_secondary = "0" + clean_phone_secondary[2:]
+    if len(clean_phone_secondary) > 11:
+        clean_phone_secondary = clean_phone_secondary[:11]
+
     # Insert order in Turso Cloud / SQLite
     order_data = {
         "customer_name": customer_name.strip(),
-        "phone_primary": phone_primary.strip(),
-        "phone_secondary": (phone_secondary or "").strip(),
+        "phone_primary": clean_phone_primary,
+        "phone_secondary": clean_phone_secondary,
         "city": city.strip(),
         "area": area.strip(),
         "address": address.strip(),
