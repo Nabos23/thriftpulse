@@ -46,6 +46,12 @@ def render_slip_card_html(order: Order, hide_meta: bool = True) -> str:
 
     return f"""
     <div class="slip-card" data-order-code="{order_code}">
+      <!-- Order Number Header Bar -->
+      <div class="card-order-bar">
+        <span class="order-bar-label">ORDER NUMBER</span>
+        <span class="order-bar-code">#{order_code}</span>
+      </div>
+
       <!-- Top SHOE & SIZE Header (Shoe gets full room, Size in right corner) -->
       <div class="card-top-header">
         <div class="header-col header-shoe">
@@ -127,6 +133,31 @@ def get_common_css() -> str:
       box-sizing: border-box;
       position: relative;
       overflow: hidden;
+    }
+
+    /* Top Bar: ORDER NUMBER */
+    .card-order-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+      border-bottom: 1.5px dashed #cbd5e1;
+    }
+
+    .order-bar-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #5b6b82;
+    }
+
+    .order-bar-code {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #0b192c;
+      letter-spacing: 0.5px;
     }
 
     /* Top Header: SHOE (expanded) | SIZE (in right corner) */
