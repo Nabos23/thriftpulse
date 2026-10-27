@@ -392,6 +392,67 @@
       line-height: 1.6;
     }
 
+    /* Unique High-Visibility Delivery Notice Banner */
+    .delivery-notice-banner {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(217, 119, 6, 0.16) 100%);
+      border: 2px solid #f59e0b;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin: 14px 0 18px 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-align: left;
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      animation: deliveryPulse 2.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes deliveryPulse {
+      0% {
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.25);
+        border-color: #f59e0b;
+      }
+      100% {
+        box-shadow: 0 0 32px rgba(245, 158, 11, 0.55);
+        border-color: #fbbf24;
+      }
+    }
+
+    .delivery-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.45);
+    }
+
+    .delivery-text-wrap {
+      flex: 1;
+    }
+
+    .delivery-heading {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fbbf24;
+      letter-spacing: 0.2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .delivery-subheading {
+      font-size: 13px;
+      color: #fef3c7;
+      margin-top: 3px;
+      line-height: 1.4;
+      opacity: 0.95;
+    }
+
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeInDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
@@ -413,21 +474,21 @@
         <!-- SECTION 1: Shoe Particulars -->
         <div class="section-title">👟 1. Shoe Details</div>
         
-        <!-- Image Upload with Auto-compression & Multi-image Support -->
+        <!-- Image Upload with Auto-compression & Max 1 Photo Support -->
         <div class="form-group">
-          <label>Photo(s) of Selected Shoes <span class="req">* (You can attach multiple photos)</span></label>
+          <label>Photo of Selected Shoes <span class="req">* (Max 1 photo)</span></label>
           <div class="upload-container" id="uploadZone" onclick="document.getElementById('shoe_photo_input').click()">
             <div class="upload-icon">📸</div>
-            <div class="upload-text">Click or Tap to Upload Shoe Photo(s)</div>
-            <div class="upload-hint">Upload screenshots, angles, or photos sent on WhatsApp/IG (Multiple allowed)</div>
+            <div class="upload-text">Click or Tap to Upload Shoe Photo</div>
+            <div class="upload-hint">Upload 1 clear photo or screenshot of the shoes (Max 1 photo)</div>
           </div>
-          <input type="file" id="shoe_photo_input" accept="image/*" multiple>
+          <input type="file" id="shoe_photo_input" accept="image/*">
           
           <div class="photos-gallery-container" id="photosGalleryContainer">
             <div class="photos-gallery-header">
-              <span id="photosCountText">📷 0 photos attached</span>
+              <span id="photosCountText">📷 1 photo attached</span>
               <button type="button" class="add-more-photos-btn" onclick="document.getElementById('shoe_photo_input').click()">
-                ＋ Add More Photos
+                🔄 Change Photo
               </button>
             </div>
             <div class="photos-grid" id="photosGrid"></div>
@@ -517,11 +578,21 @@
       <div class="success-card" id="successCard">
         <div class="success-icon">✓</div>
         <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 6px;">Order Confirmed!</h2>
-        <p style="color: var(--text-muted); font-size: 14px;">Your order and shoe photo(s) have been logged successfully.</p>
+        <p style="color: var(--text-muted); font-size: 14px;">Your order has been logged successfully.</p>
         
-        <div class="success-code" id="orderCodeDisplay">TS-1001</div>
+        <div class="success-code">Order #<span id="orderCodeDisplay">TS-1001</span></div>
+
+        <!-- UNIQUE HIGH-VISIBILITY DELIVERY NOTICE -->
+        <div class="delivery-notice-banner">
+          <div class="delivery-icon-wrap">🚚</div>
+          <div class="delivery-text-wrap">
+            <div class="delivery-heading">⚡ Delivery Within 7 Days</div>
+            <div class="delivery-subheading">Your order will be packed and delivered to your doorstep within <strong>7 working days</strong>.</div>
+          </div>
+        </div>
 
         <div class="info-pill" id="summaryBox">
+          <div>📦 <strong>Order Number:</strong> <span id="resOrderCode" style="color: #38bdf8; font-weight: 700;"></span></div>
           <div>👤 <strong>Receiver:</strong> <span id="resName"></span></div>
           <div>📞 <strong>Phone:</strong> <span id="resPhone"></span></div>
           <div>📍 <strong>City:</strong> <span id="resCity"></span></div>
@@ -555,22 +626,25 @@
       const files = Array.from(e.target.files);
       if (!files || files.length === 0) return;
 
-      for (const file of files) {
-        try {
-          // Compress client side to max 1280px dimension and 0.82 quality
-          const compressedBlob = await compressImage(file, 1280, 0.82);
-          const previewUrl = URL.createObjectURL(compressedBlob);
-          uploadedPhotos.push({
-            name: file.name,
-            blob: compressedBlob,
-            previewUrl: previewUrl
-          });
-        } catch (err) {
-          console.error("Compression failed for file:", file.name, err);
-        }
+      // Max 1 photo: clean up any existing photo preview
+      uploadedPhotos.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+      uploadedPhotos = [];
+
+      const file = files[0];
+      try {
+        // Compress client side to max 1280px dimension and 0.82 quality
+        const compressedBlob = await compressImage(file, 1280, 0.82);
+        const previewUrl = URL.createObjectURL(compressedBlob);
+        uploadedPhotos.push({
+          name: file.name,
+          blob: compressedBlob,
+          previewUrl: previewUrl
+        });
+      } catch (err) {
+        console.error("Compression failed for file:", file.name, err);
       }
 
-      // Reset input value so user can select additional files or re-select
+      // Reset input value so user can re-select or change photo
       photoInput.value = '';
       renderPhotosGallery();
     });
@@ -583,8 +657,9 @@
         return;
       }
 
+      uploadZone.style.display = 'none';
       photosGalleryContainer.style.display = 'block';
-      photosCountText.innerText = `📷 ${uploadedPhotos.length} photo${uploadedPhotos.length > 1 ? 's' : ''} attached`;
+      photosCountText.innerText = '📷 1 photo attached (Max 1)';
 
       uploadedPhotos.forEach((item, index) => {
         const card = document.createElement('div');
@@ -592,7 +667,7 @@
 
         const img = document.createElement('img');
         img.src = item.previewUrl;
-        img.alt = `Shoe Photo ${index + 1}`;
+        img.alt = 'Shoe Photo';
 
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
@@ -603,13 +678,6 @@
 
         card.appendChild(img);
         card.appendChild(delBtn);
-
-        if (index === 0) {
-          const badge = document.createElement('span');
-          badge.className = 'badge-primary';
-          badge.innerText = 'Main';
-          card.appendChild(badge);
-        }
 
         photosGrid.appendChild(card);
       });
@@ -690,7 +758,12 @@
       e.preventDefault();
 
       if (uploadedPhotos.length === 0) {
-        alert('Please select and upload at least one picture of the shoes.');
+        alert('Please select and upload 1 picture of the shoes.');
+        return;
+      }
+
+      if (uploadedPhotos.length > 1) {
+        alert('Maximum 1 photo attachment is allowed.');
         return;
       }
 
@@ -748,6 +821,7 @@
           successCard.style.display = 'block';
 
           document.getElementById('orderCodeDisplay').innerText = data.order.order_code;
+          document.getElementById('resOrderCode').innerText = data.order.order_code;
           document.getElementById('resName').innerText = data.order.customer_name;
           document.getElementById('resPhone').innerText = data.order.phone_primary;
           document.getElementById('resCity').innerText = data.order.city;

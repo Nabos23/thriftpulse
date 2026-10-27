@@ -25,6 +25,7 @@ COMPACT_INVOICE_CSS = (
     "<style>"
     "body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:6px;background:#f8fafc;display:flex;justify-content:center}"
     ".slip,.slip-card{width:95mm;border:1.5px solid #cbd5e1;border-radius:6px;padding:10px;background:#fff;box-sizing:border-box}"
+    ".card-order-bar{display:flex;justify-content:space-between;border-bottom:1px dashed #cbd5e1;padding-bottom:3px;margin-bottom:4px}.order-bar-label{font-size:9px;font-weight:700;color:#5b6b82}.order-bar-code{font-size:13px;font-weight:800}"
     ".card-top-header{display:flex;gap:8px}.header-col{flex:1}.header-v-divider{width:1px;background:#cbd5e1}"
     ".field-label{font-size:9px;font-weight:700;color:#5b6b82;text-transform:uppercase}"
     ".header-val{font-size:13px;font-weight:700}.underline,.header-h-divider{border-bottom:1px solid #cbd5e1;margin:3px 0}"
