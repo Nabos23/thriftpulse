@@ -4,612 +4,473 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Complete Your Order - Thrifteddripss</title>
+  <meta name="description" content="Send your delivery details and shoe photo to confirm your Thrifteddripss order.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --accent: #f59e0b;
-      --bg: #090d16;
-      --card-bg: rgba(18, 24, 38, 0.85);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --input-bg: rgba(15, 23, 42, 0.75);
-      --input-border: rgba(255, 255, 255, 0.12);
-      --success: #10b981;
-      --danger: #ef4444;
-      --radius: 16px;
+      --ground: #e6e5df;
+      --panel: #f1f0ea;
+      --field: #ffffff;
+      --ink: #121212;
+      --ink-soft: #3f3f3b;
+      --accent: #0d5c3b;
+      --accent-ink: #ffffff;
+      --error: #b3261e;
+      --pad: clamp(16px, 4vw, 32px);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html { background: var(--ground); }
 
     body {
-      background-color: var(--bg);
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.12) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(14, 165, 233, 0.08) 0px, transparent 60%);
-      background-attachment: fixed;
-      color: var(--text-main);
+      font-family: 'Archivo', system-ui, sans-serif;
+      font-size: 17px;
+      line-height: 1.5;
+      color: var(--ink);
+      background: var(--ground);
       min-height: 100vh;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: 100vh;
+    }
+
+    /* Intro column */
+    .intro {
+      padding: var(--pad);
+      padding-top: calc(var(--pad) * 1.5);
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 24px 16px 48px;
+      justify-content: space-between;
+      gap: 32px;
     }
 
-    .container {
-      width: 100%;
-      max-width: 520px;
+    .wordmark {
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.02em;
     }
 
-    /* Header */
-    .header {
-      text-align: center;
-      margin-bottom: 24px;
-      animation: fadeInDown 0.6s ease;
+    .intro h1 {
+      font-weight: 800;
+      font-stretch: 85%;
+      font-size: clamp(56px, 15vw, 132px);
+      line-height: 0.88;
+      letter-spacing: -0.045em;
+      margin-top: 8px;
     }
 
-    .brand-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      background: rgba(99, 102, 241, 0.12);
-      border: 1px solid rgba(99, 102, 241, 0.25);
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #818cf8;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-      backdrop-filter: blur(8px);
+    .intro p {
+      max-width: 34ch;
+      font-size: 19px;
+      color: var(--ink);
     }
 
-    .title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 28px;
-      font-weight: 700;
-      background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 6px;
-      letter-spacing: -0.5px;
+    /* Form column */
+    .sheet {
+      background: var(--panel);
+      padding: var(--pad);
+      padding-bottom: calc(var(--pad) * 2);
     }
 
-    .subtitle {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.5;
+    .section { margin-bottom: 56px; }
+
+    .section h2 {
+      font-weight: 800;
+      font-stretch: 90%;
+      font-size: 34px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
     }
 
-    /* Card */
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 24px;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
-      animation: fadeInUp 0.7s ease;
-    }
-
-    .section-title {
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #818cf8;
-      margin: 20px 0 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .section-title:first-of-type {
-      margin-top: 0;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
+    .form-group { margin-bottom: 18px; }
 
     .form-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      grid-template-columns: 1fr;
+      gap: 0 14px;
     }
 
     label {
       display: block;
-      font-size: 13px;
-      font-weight: 500;
-      color: #cbd5e1;
-      margin-bottom: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 7px;
     }
 
-    .req {
-      color: var(--accent);
-    }
+    .opt { font-weight: 400; color: var(--ink-soft); }
 
     input, select, textarea {
       width: 100%;
-      background: var(--input-bg);
-      border: 1px solid var(--input-border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 14px;
-      color: #ffffff;
+      font: inherit;
+      font-size: 17px;
+      color: var(--ink);
+      background: var(--field);
+      border: 2px solid transparent;
+      border-radius: 0;
+      padding: 14px 14px;
       outline: none;
-      transition: all 0.2s ease;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
     }
 
-    input::placeholder, textarea::placeholder {
-      color: #64748b;
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23121212' stroke-width='2'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 44px;
     }
 
-    input:focus, select:focus, textarea:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
-      background: rgba(15, 23, 42, 0.95);
-    }
+    textarea { resize: vertical; min-height: 96px; }
 
-    /* Image Upload Box */
-    .upload-container {
-      border: 2px dashed rgba(99, 102, 241, 0.4);
-      background: rgba(99, 102, 241, 0.04);
-      border-radius: 14px;
-      padding: 20px;
-      text-align: center;
+    input::placeholder, textarea::placeholder { color: #85847d; }
+
+    input:hover, select:hover, textarea:hover { border-color: #c9c8c0; }
+    input:focus, select:focus, textarea:focus { border-color: var(--ink); }
+
+    input:user-invalid, textarea:user-invalid { border-color: var(--error); }
+
+    /* Photo */
+    #shoe_photo_input { display: none; }
+
+    .upload-zone {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-end;
+      gap: 6px;
+      min-height: 220px;
+      padding: 22px;
+      background: var(--ink);
+      color: #fff;
+      border: 0;
       cursor: pointer;
-      position: relative;
-      transition: all 0.25s ease;
-      overflow: hidden;
+      text-align: left;
+      font: inherit;
+      transition: background-color 0.15s ease, transform 0.15s ease;
     }
-
-    .upload-container:hover {
-      border-color: var(--primary);
-      background: rgba(99, 102, 241, 0.08);
-    }
-
-    .upload-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-      display: inline-block;
-    }
+    .upload-zone:hover { background: #2a2a28; }
+    .upload-zone:active { transform: scale(0.99); }
+    .upload-zone:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
     .upload-text {
-      font-size: 14px;
-      font-weight: 600;
-      color: #e2e8f0;
-      margin-bottom: 4px;
+      font-weight: 800;
+      font-stretch: 90%;
+      font-size: 30px;
+      line-height: 1;
+      letter-spacing: -0.03em;
     }
+    .upload-hint { font-size: 15px; color: #d6d5cf; }
 
-    .upload-hint {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    #shoe_photo_input {
-      display: none;
-    }
-
-    .photos-gallery-container {
-      display: none;
-      margin-top: 14px;
-    }
+    .photos-gallery-container { display: none; }
 
     .photos-gallery-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
       margin-bottom: 10px;
-      font-size: 13px;
       font-weight: 600;
-      color: #cbd5e1;
+      font-size: 15px;
     }
 
-    .add-more-photos-btn {
-      background: rgba(99, 102, 241, 0.18);
-      color: #a5b4fc;
-      border: 1px solid rgba(99, 102, 241, 0.4);
-      padding: 5px 12px;
-      border-radius: 8px;
-      font-size: 12px;
+    .link-btn {
+      font: inherit;
+      font-size: 15px;
       font-weight: 600;
+      color: var(--ink);
+      background: none;
+      border: 0;
+      text-decoration: underline;
+      text-underline-offset: 3px;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.2s ease;
+      padding: 6px 0;
     }
+    .link-btn:hover { color: var(--accent); }
 
-    .add-more-photos-btn:hover {
-      background: rgba(99, 102, 241, 0.3);
-      color: #ffffff;
-      border-color: var(--primary);
-    }
+    .photos-grid { display: block; }
 
-    .photos-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
-      gap: 10px;
-    }
-
-    .photo-card {
-      position: relative;
-      border-radius: 10px;
-      overflow: hidden;
-      aspect-ratio: 1 / 1;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(15, 23, 42, 0.8);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      transition: transform 0.2s ease;
-    }
-
-    .photo-card:hover {
-      transform: scale(1.02);
-    }
-
-    .photo-card img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+    .photo-card { position: relative; background: var(--field); }
+    .photo-card img { display: block; width: 100%; max-height: 360px; object-fit: cover; }
 
     .photo-card .delete-btn {
       position: absolute;
-      top: 5px;
-      right: 5px;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: rgba(239, 68, 68, 0.9);
-      color: #ffffff;
-      border: none;
-      font-size: 12px;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      backdrop-filter: blur(4px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-      transition: background 0.2s;
-    }
-
-    .photo-card .delete-btn:hover {
-      background: #dc2626;
-    }
-
-    .photo-card .badge-primary {
-      position: absolute;
-      bottom: 5px;
-      left: 5px;
-      background: rgba(15, 23, 42, 0.85);
-      color: #a5b4fc;
-      font-size: 10px;
+      top: 10px;
+      right: 10px;
+      font: inherit;
+      font-size: 14px;
       font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      border: 1px solid rgba(99, 102, 241, 0.4);
+      background: var(--ink);
+      color: #fff;
+      border: 0;
+      padding: 8px 14px;
+      cursor: pointer;
     }
+    .photo-card .delete-btn:hover { background: var(--error); }
 
-    /* Button */
+    /* Errors */
+    .form-error {
+      display: none;
+      background: var(--error);
+      color: #fff;
+      font-weight: 600;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+    }
+    .form-error.show { display: block; }
+
+    /* Buttons */
     .submit-btn {
       width: 100%;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-      color: #ffffff;
-      border: none;
-      border-radius: 12px;
-      padding: 15px;
-      font-size: 15px;
-      font-weight: 700;
+      font: inherit;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--accent-ink);
+      background: var(--accent);
+      border: 0;
+      border-radius: 0;
+      padding: 22px 20px;
       cursor: pointer;
-      margin-top: 14px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.25s ease;
-      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.45);
+      justify-content: space-between;
+      gap: 12px;
+      transition: background-color 0.15s ease, transform 0.15s ease;
     }
-
-    .submit-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.6);
-    }
-
-    .submit-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
+    .submit-btn:hover { background: #09472e; }
+    .submit-btn:active { transform: scale(0.99); }
+    .submit-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .submit-btn.quiet { background: var(--ink); }
+    .submit-btn.quiet:hover { background: #2a2a28; }
 
     .spinner {
       width: 20px;
       height: 20px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top-color: #ffffff;
+      border: 3px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       display: none;
     }
 
-    /* Success Card */
-    .success-card {
-      display: none;
-      text-align: center;
-      animation: zoomIn 0.5s ease;
-    }
+    /* Success */
+    .success-card { display: none; }
 
-    .success-icon {
-      width: 64px;
-      height: 64px;
-      background: rgba(16, 185, 129, 0.15);
-      border: 2px solid var(--success);
-      color: var(--success);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      margin: 0 auto 16px;
+    .success-card h2 {
+      font-weight: 800;
+      font-stretch: 85%;
+      font-size: clamp(44px, 9vw, 72px);
+      line-height: 0.92;
+      letter-spacing: -0.04em;
+      margin-bottom: 16px;
     }
 
     .success-code {
-      display: inline-block;
-      font-family: 'Space Grotesk', monospace;
-      font-size: 20px;
-      font-weight: 700;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px dashed rgba(56, 189, 248, 0.3);
-      padding: 8px 16px;
-      border-radius: 8px;
-      margin: 12px 0 18px;
-    }
-
-    .info-pill {
-      background: rgba(255, 255, 255, 0.04);
-      border-radius: 10px;
-      padding: 12px;
-      text-align: left;
-      font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
-
-    /* Unique High-Visibility Delivery Notice Banner */
-    .delivery-notice-banner {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(217, 119, 6, 0.16) 100%);
-      border: 2px solid #f59e0b;
-      border-radius: 14px;
-      padding: 14px 16px;
-      margin: 14px 0 18px 0;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      text-align: left;
-      box-shadow: 0 0 25px rgba(245, 158, 11, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-      animation: deliveryPulse 2.5s ease-in-out infinite alternate;
-    }
-
-    @keyframes deliveryPulse {
-      0% {
-        box-shadow: 0 0 15px rgba(245, 158, 11, 0.25);
-        border-color: #f59e0b;
-      }
-      100% {
-        box-shadow: 0 0 32px rgba(245, 158, 11, 0.55);
-        border-color: #fbbf24;
-      }
-    }
-
-    .delivery-icon-wrap {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 26px;
-      flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.45);
-    }
-
-    .delivery-text-wrap {
-      flex: 1;
-    }
-
-    .delivery-heading {
-      font-size: 16px;
       font-weight: 800;
-      color: #fbbf24;
-      letter-spacing: 0.2px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      font-size: 28px;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      background: var(--field);
+      padding: 16px 18px;
+      margin: 20px 0;
     }
 
-    .delivery-subheading {
-      font-size: 13px;
-      color: #fef3c7;
-      margin-top: 3px;
-      line-height: 1.4;
-      opacity: 0.95;
+    .delivery-notice-banner {
+      background: var(--accent);
+      color: #fff;
+      padding: 22px;
+      margin-bottom: 20px;
     }
+    .delivery-heading {
+      font-weight: 800;
+      font-stretch: 90%;
+      font-size: 30px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .delivery-subheading { font-size: 17px; }
 
+    .summary { background: var(--field); padding: 6px 18px; margin-bottom: 20px; }
+    .summary div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; }
+    .summary div + div { background: none; }
+    .summary dt { font-weight: 600; }
+    .summary dd { text-align: right; }
+
+    .success-note { margin-bottom: 20px; }
+
+    /* Motion */
+    .rise { animation: rise 0.6s cubic-bezier(.2,.7,.2,1) both; }
+    .rise.d1 { animation-delay: 0.08s; }
+    .rise.d2 { animation-delay: 0.16s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
     @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rise { animation: none; }
+      * { transition: none !important; }
+    }
+
+    @media (min-width: 560px) {
+      .form-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (min-width: 960px) {
+      .page { grid-template-columns: minmax(0, 1fr) minmax(520px, 640px); }
+      .intro { position: sticky; top: 0; height: 100vh; padding-right: 48px; }
+      .sheet { padding: 56px 48px 96px; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <div class="header">
-      <div class="brand-badge">⚡ Thrifteddripss</div>
-      <h1 class="title">Delivery & Order Form</h1>
-      <p class="subtitle">Fill in your delivery address & shoe photo to confirm your order.</p>
-    </div>
+  <div class="page">
+    <header class="intro">
+      <div class="wordmark">Thrifteddripss</div>
+      <div>
+        <h1 class="rise">Your order, your door.</h1>
+      </div>
+      <p class="rise d1">Add the shoe photo and your delivery address. We pack it and send it by courier.</p>
+    </header>
 
-    <div class="card">
-      <form id="orderForm">
-        
-        <!-- SECTION 1: Shoe Particulars -->
-        <div class="section-title">👟 1. Shoe Details</div>
-        
-        <!-- Image Upload with Auto-compression & Max 1 Photo Support -->
-        <div class="form-group">
-          <label>Photo of Selected Shoes <span class="req">* (Max 1 photo)</span></label>
-          <div class="upload-container" id="uploadZone" onclick="document.getElementById('shoe_photo_input').click()">
-            <div class="upload-icon">📸</div>
-            <div class="upload-text">Click or Tap to Upload Shoe Photo</div>
-            <div class="upload-hint">Upload 1 clear photo or screenshot of the shoes (Max 1 photo)</div>
-          </div>
-          <input type="file" id="shoe_photo_input" accept="image/*">
-          
-          <div class="photos-gallery-container" id="photosGalleryContainer">
-            <div class="photos-gallery-header">
-              <span id="photosCountText">📷 1 photo attached</span>
-              <button type="button" class="add-more-photos-btn" onclick="document.getElementById('shoe_photo_input').click()">
-                🔄 Change Photo
-              </button>
+    <main class="sheet">
+      <form id="orderForm" novalidate>
+
+        <section class="section rise d1">
+          <h2>The shoes</h2>
+
+          <div class="form-group">
+            <label for="uploadZone">Photo of the shoes</label>
+            <button type="button" class="upload-zone" id="uploadZone" onclick="document.getElementById('shoe_photo_input').click()">
+              <span class="upload-text">Add a photo</span>
+              <span class="upload-hint">One clear photo or screenshot of the pair you chose.</span>
+            </button>
+            <input type="file" id="shoe_photo_input" accept="image/*">
+
+            <div class="photos-gallery-container" id="photosGalleryContainer">
+              <div class="photos-gallery-header">
+                <span id="photosCountText">Photo attached</span>
+                <button type="button" class="link-btn" onclick="document.getElementById('shoe_photo_input').click()">Change photo</button>
+              </div>
+              <div class="photos-grid" id="photosGrid"></div>
             </div>
-            <div class="photos-grid" id="photosGrid"></div>
           </div>
-        </div>
 
-        <div class="form-row">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="shoe_brand_model">Shoe name</label>
+              <input type="text" id="shoe_brand_model" placeholder="Nike Dunk Low" required>
+            </div>
+            <div class="form-group">
+              <label for="shoe_size">Size</label>
+              <input type="text" id="shoe_size" placeholder="42 EU / 8.5 US" required>
+            </div>
+          </div>
+
           <div class="form-group">
-            <label>Shoe Name / Article <span class="req">*</span></label>
-            <input type="text" id="shoe_brand_model" placeholder="e.g. Nike Dunk Low" required>
+            <label for="price">Agreed price (PKR)</label>
+            <input type="number" id="price" placeholder="4500" required min="100" inputmode="numeric">
           </div>
+          <input type="hidden" id="payment_method" value="Advance Bank Transfer">
+
+        </section>
+
+        <section class="section rise d2">
+          <h2>About you</h2>
+
           <div class="form-group">
-            <label>Shoe Size <span class="req">*</span></label>
-            <input type="text" id="shoe_size" placeholder="e.g. 42 EU / 8.5 US" required>
+            <label for="customer_name">Full name</label>
+            <input type="text" id="customer_name" placeholder="Name as on the parcel" autocomplete="name" required>
           </div>
-        </div>
 
-        <div class="form-row">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="phone_primary">Phone / WhatsApp</label>
+              <input type="tel" id="phone_primary" name="phone_primary" placeholder="03xxxxxxxxx" maxlength="11" pattern="03[0-9]{9}" inputmode="numeric" autocomplete="tel" title="11-digit phone number starting with 03 (e.g. 03xxxxxxxxx)" required>
+            </div>
+            <div class="form-group">
+              <label for="phone_secondary">Alternate phone <span class="opt">optional</span></label>
+              <input type="tel" id="phone_secondary" name="phone_secondary" placeholder="03xxxxxxxxx" maxlength="11" pattern="03[0-9]{9}" inputmode="numeric" autocomplete="tel" title="11-digit phone number starting with 03 (e.g. 03xxxxxxxxx)">
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Where to deliver</h2>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city">City</label>
+              <input type="text" id="city" placeholder="Karachi, Lahore, Islamabad" required>
+            </div>
+            <div class="form-group">
+              <label for="area">Area / sector / colony</label>
+              <input type="text" id="area" placeholder="DHA Phase 5, Gulberg" required>
+            </div>
+          </div>
+
           <div class="form-group">
-            <label>Agreed Price (PKR) <span class="req">*</span></label>
-            <input type="number" id="price" placeholder="e.g. 4500" required min="100">
+            <label for="address">House, flat and street</label>
+            <textarea id="address" rows="2" placeholder="House #, street #, apartment name" required></textarea>
           </div>
+
           <div class="form-group">
-            <label>Payment Method</label>
-            <select id="payment_method">
-              <option value="Cash on Delivery">Cash on Delivery (COD)</option>
-              <option value="Advance Bank Transfer">Advance Bank Transfer</option>
-            </select>
+            <label for="nearest_landmark">Nearest landmark <span class="opt">optional</span></label>
+            <input type="text" id="nearest_landmark" placeholder="Near PSO pump, behind City Hospital">
           </div>
-        </div>
 
-        <!-- SECTION 2: Customer Contact -->
-        <div class="section-title">👤 2. Customer Information</div>
-
-        <div class="form-group">
-          <label>Your Full Name <span class="req">*</span></label>
-          <input type="text" id="customer_name" placeholder="Enter your full name" required>
-        </div>
-
-        <div class="form-row">
           <div class="form-group">
-            <label>Primary Phone / WhatsApp <span class="req">*</span></label>
-            <input type="tel" id="phone_primary" name="phone_primary" placeholder="03xxxxxxxxx" maxlength="11" pattern="03[0-9]{9}" inputmode="numeric" autocomplete="tel" title="11-digit phone number starting with 03 (e.g. 03xxxxxxxxx)" required>
+            <label for="notes">Notes for the courier <span class="opt">optional</span></label>
+            <input type="text" id="notes" placeholder="Deliver between 2pm and 6pm">
           </div>
-          <div class="form-group">
-            <label>Alternate Phone <span style="color:#64748b;">(Optional)</span></label>
-            <input type="tel" id="phone_secondary" name="phone_secondary" placeholder="03xxxxxxxxx" maxlength="11" pattern="03[0-9]{9}" inputmode="numeric" autocomplete="tel" title="11-digit phone number starting with 03 (e.g. 03xxxxxxxxx)">
-          </div>
-        </div>
+        </section>
 
-        <!-- SECTION 3: Delivery Address -->
-        <div class="section-title">📍 3. Delivery Address</div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>City <span class="req">*</span></label>
-            <input type="text" id="city" placeholder="e.g. Karachi, Lahore, Islamabad" required>
-          </div>
-          <div class="form-group">
-            <label>Area / Sector / Colony <span class="req">*</span></label>
-            <input type="text" id="area" placeholder="e.g. DHA Phase 5 / Gulberg" required>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Complete House / Flat / Street Address <span class="req">*</span></label>
-          <textarea id="address" rows="2" placeholder="House #, Street #, Apartment name etc." required></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Nearest Prominent Landmark <span style="color:#64748b;">(Optional)</span></label>
-          <input type="text" id="nearest_landmark" placeholder="e.g. Near PSO Pump, Behind City Hospital">
-        </div>
-
-        <div class="form-group">
-          <label>Special Instructions / Notes</label>
-          <input type="text" id="notes" placeholder="e.g. Deliver between 2pm-6pm">
-        </div>
+        <div class="form-error" id="formError" role="alert"></div>
 
         <button type="submit" class="submit-btn" id="submitBtn">
+          <span id="btnText">Place order</span>
           <span class="spinner" id="btnSpinner"></span>
-          <span id="btnText">Confirm & Place Order 🚀</span>
         </button>
       </form>
 
-      <!-- SUCCESS SCREEN -->
+      <!-- SUCCESS -->
       <div class="success-card" id="successCard">
-        <div class="success-icon">✓</div>
-        <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 6px;">Order Confirmed!</h2>
-        <p style="color: var(--text-muted); font-size: 14px;">Your order has been logged successfully.</p>
-        
+        <h2>Order confirmed.</h2>
+        <p>Your order has been logged.</p>
+
         <div class="success-code">Order #<span id="orderCodeDisplay">TS-1001</span></div>
 
-        <!-- UNIQUE HIGH-VISIBILITY DELIVERY NOTICE -->
         <div class="delivery-notice-banner">
-          <div class="delivery-icon-wrap">🚚</div>
-          <div class="delivery-text-wrap">
-            <div class="delivery-heading">⚡ Delivery Within 7 Days</div>
-            <div class="delivery-subheading">Your order will be packed and delivered to your doorstep within <strong>7 working days</strong>.</div>
-          </div>
+          <div class="delivery-heading">Delivery within 7 days</div>
+          <div class="delivery-subheading">Your parcel is packed and delivered to your door within <strong>7 working days</strong>.</div>
         </div>
 
-        <div class="info-pill" id="summaryBox">
-          <div>📦 <strong>Order Number:</strong> <span id="resOrderCode" style="color: #38bdf8; font-weight: 700;"></span></div>
-          <div>👤 <strong>Receiver:</strong> <span id="resName"></span></div>
-          <div>📞 <strong>Phone:</strong> <span id="resPhone"></span></div>
-          <div>📍 <strong>City:</strong> <span id="resCity"></span></div>
-          <div>👟 <strong>Item:</strong> <span id="resItem"></span></div>
-          <div>💵 <strong>COD Amount:</strong> PKR <span id="resPrice"></span></div>
-        </div>
+        <dl class="summary" id="summaryBox">
+          <div><dt>Order</dt><dd id="resOrderCode"></dd></div>
+          <div><dt>Receiver</dt><dd id="resName"></dd></div>
+          <div><dt>Phone</dt><dd id="resPhone"></dd></div>
+          <div><dt>City</dt><dd id="resCity"></dd></div>
+          <div><dt>Item</dt><dd id="resItem"></dd></div>
+          <div><dt>Amount</dt><dd>PKR <span id="resPrice"></span></dd></div>
+        </dl>
 
-        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">
-          Our team will dispatch your parcel via courier shortly. The seller has received your receipt.
-        </p>
+        <p class="success-note">Our team will dispatch your parcel by courier shortly. The seller has received your receipt.</p>
 
-        <button type="button" class="submit-btn" onclick="location.reload()" style="background: rgba(255,255,255,0.08); box-shadow: none;">
-          Submit Another Order
+        <button type="button" class="submit-btn quiet" onclick="location.reload()">
+          <span>Submit another order</span>
         </button>
       </div>
-
-    </div>
+    </main>
   </div>
 
   <script>
@@ -621,6 +482,15 @@
     const photosGalleryContainer = document.getElementById('photosGalleryContainer');
     const photosGrid = document.getElementById('photosGrid');
     const photosCountText = document.getElementById('photosCountText');
+    const formError = document.getElementById('formError');
+
+    function showError(msg, focusEl) {
+      formError.textContent = msg;
+      formError.classList.add('show');
+      if (focusEl) focusEl.focus();
+      else formError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function clearError() { formError.classList.remove('show'); formError.textContent = ''; }
 
     photoInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files);
@@ -640,6 +510,7 @@
           blob: compressedBlob,
           previewUrl: previewUrl
         });
+        clearError();
       } catch (err) {
         console.error("Compression failed for file:", file.name, err);
       }
@@ -653,13 +524,13 @@
       photosGrid.innerHTML = '';
       if (uploadedPhotos.length === 0) {
         photosGalleryContainer.style.display = 'none';
-        uploadZone.style.display = 'block';
+        uploadZone.style.display = 'flex';
         return;
       }
 
       uploadZone.style.display = 'none';
       photosGalleryContainer.style.display = 'block';
-      photosCountText.innerText = '📷 1 photo attached (Max 1)';
+      photosCountText.innerText = 'Photo attached';
 
       uploadedPhotos.forEach((item, index) => {
         const card = document.createElement('div');
@@ -667,12 +538,12 @@
 
         const img = document.createElement('img');
         img.src = item.previewUrl;
-        img.alt = 'Shoe Photo';
+        img.alt = 'Shoe photo';
 
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
         delBtn.className = 'delete-btn';
-        delBtn.innerHTML = '✕';
+        delBtn.textContent = 'Remove';
         delBtn.title = 'Remove photo';
         delBtn.onclick = () => removePhoto(index);
 
@@ -754,16 +625,31 @@
     const btnText = document.getElementById('btnText');
     const successCard = document.getElementById('successCard');
 
+    function resetBtn() {
+      submitBtn.disabled = false;
+      btnSpinner.style.display = 'none';
+      btnText.innerText = 'Place order';
+    }
+
     orderForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      clearError();
 
       if (uploadedPhotos.length === 0) {
-        alert('Please select and upload 1 picture of the shoes.');
+        showError('Please add a photo of the shoes.', uploadZone);
         return;
       }
 
       if (uploadedPhotos.length > 1) {
-        alert('Maximum 1 photo attachment is allowed.');
+        showError('Maximum 1 photo attachment is allowed.');
+        return;
+      }
+
+      // Native required-field check, reported inline
+      const firstInvalid = Array.from(orderForm.querySelectorAll('input, select, textarea'))
+        .find((el) => el.id !== 'shoe_photo_input' && !el.checkValidity());
+      if (firstInvalid && !['phone_primary', 'phone_secondary'].includes(firstInvalid.id)) {
+        showError('Please fill in every required field.', firstInvalid);
         return;
       }
 
@@ -771,20 +657,18 @@
       const phoneSecondaryVal = document.getElementById('phone_secondary').value.trim();
 
       if (phonePrimaryVal.length !== 11 || !phonePrimaryVal.startsWith('03')) {
-        alert('Primary phone number must be 11 digits starting with 03 (e.g. 03xxxxxxxxx).');
-        document.getElementById('phone_primary').focus();
+        showError('Phone must be 11 digits starting with 03, like 03xxxxxxxxx.', document.getElementById('phone_primary'));
         return;
       }
 
       if (phoneSecondaryVal && (phoneSecondaryVal.length !== 11 || !phoneSecondaryVal.startsWith('03'))) {
-        alert('Alternate phone number must be 11 digits starting with 03 (e.g. 03xxxxxxxxx).');
-        document.getElementById('phone_secondary').focus();
+        showError('Alternate phone must be 11 digits starting with 03, like 03xxxxxxxxx.', document.getElementById('phone_secondary'));
         return;
       }
 
       submitBtn.disabled = true;
       btnSpinner.style.display = 'inline-block';
-      btnText.innerText = 'Creating Order...';
+      btnText.innerText = 'Creating order...';
 
       const formData = new FormData();
       formData.append('customer_name', document.getElementById('customer_name').value.trim());
@@ -819,6 +703,8 @@
           // Show Success Card
           orderForm.style.display = 'none';
           successCard.style.display = 'block';
+          successCard.classList.add('rise');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
 
           document.getElementById('orderCodeDisplay').innerText = data.order.order_code;
           document.getElementById('resOrderCode').innerText = data.order.order_code;
@@ -828,16 +714,12 @@
           document.getElementById('resItem').innerText = data.order.shoe_brand_model + ' (' + data.order.shoe_size + ')';
           document.getElementById('resPrice').innerText = Number(data.order.price).toLocaleString();
         } else {
-          alert('Error placing order: ' + (data.detail || data.error || 'Server error'));
-          submitBtn.disabled = false;
-          btnSpinner.style.display = 'none';
-          btnText.innerText = 'Confirm & Place Order 🚀';
+          showError('Could not place the order: ' + (data.detail || data.error || 'Server error'));
+          resetBtn();
         }
       } catch (err) {
-        alert('Network connection error. Please try again.');
-        submitBtn.disabled = false;
-        btnSpinner.style.display = 'none';
-        btnText.innerText = 'Confirm & Place Order 🚀';
+        showError('Network connection error. Please try again.');
+        resetBtn();
       }
     });
   </script>
