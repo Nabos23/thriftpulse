@@ -350,7 +350,7 @@
           <h2>The shoes</h2>
 
           <div class="form-group">
-            <label for="uploadZone">Photo of the shoes</label>
+            <label for="uploadZone">Photo of the shoes <span class="req">*</span></label>
             <button type="button" class="upload-zone" id="uploadZone" onclick="document.getElementById('shoe_photo_input').click()">
               <span class="upload-text">Add a photo</span>
               <span class="upload-hint">One clear photo or screenshot of the pair you chose.</span>
@@ -513,6 +513,7 @@
         clearError();
       } catch (err) {
         console.error("Compression failed for file:", file.name, err);
+        showError('That file could not be read as an image. Please choose a different photo.', uploadZone);
       }
 
       // Reset input value so user can re-select or change photo

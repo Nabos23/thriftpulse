@@ -201,7 +201,16 @@ async def create_order(
         incoming_files.append(shoe_photo)
 
     if not incoming_files:
-        raise HTTPException(status_code=400, detail="At least one shoe photo is required.")
+        raise HTTPException(status_code=400, detail="A shoe photo is required.")
+
+    # The form allows a single photo only; ignore any extras
+    incoming_files = incoming_files[:1]
+
+    # Reject empty uploads (0-byte file) so an order can never be saved without a real image
+    first_bytes = await incoming_files[0].read()
+    await incoming_files[0].seek(0)
+    if not first_bytes:
+        raise HTTPException(status_code=400, detail="The shoe photo is empty. Please upload a valid image.")
 
     # Ensure directories exist
     os.makedirs(settings.UPLOADS_DIR, exist_ok=True)

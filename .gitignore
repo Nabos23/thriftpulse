@@ -4,8 +4,6 @@ __pycache__/
 *$py.class
 
 # Environment variables & secrets (CRITICAL - NEVER COMMIT)
-.env
-.env.*
 !.env.example
 
 # Google OAuth credentials & tokens (CRITICAL - NEVER COMMIT)
@@ -42,7 +40,6 @@ ENV/
 env/
 
 # IDE, OS, and Agent metadata
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -55,3 +52,5 @@ temp_interactive_push.bat
 
 # Agent skills
 .agents/
+config.bat
+node_modules
