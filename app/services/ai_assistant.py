@@ -483,45 +483,71 @@ async def process_owner_query(text: str, sender_phone: str, base_url: str) -> di
         caption_to_send: str | None = None
 
         if choice.tool_calls:
-            # Handle tool calls - normalize to dict for maximum OpenRouter compatibility
-            assistant_msg: dict[str, Any] = {
-                "role": "assistant",
-                "content": choice.content or "",
-                "tool_calls": [
-                    {
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
-                        },
-                    }
-                    for tc in choice.tool_calls
-                ],
-            }
-            messages.append(assistant_msg)
             matched_orders: list[Order] = []
+            final_reply = ""
 
-            for tool_call in choice.tool_calls:
-                fn_name = tool_call.function.name
-                raw_args = tool_call.function.arguments or "{}"
-                try:
-                    fn_args = json.loads(raw_args)
-                    if not isinstance(fn_args, dict):
-                        fn_args = {"query": str(fn_args)}
-                except Exception:
-                    fn_args = {"query": text}
-
-                print(f"[IMAGE_DEBUG] Calling tool '{fn_name}' with args: {fn_args}")
-                tool_output, orders = await execute_tool(fn_name, fn_args, base_url)
-                matched_orders.extend(orders)
-                print(f"[IMAGE_DEBUG] Tool '{fn_name}' returned {len(orders)} Order objects")
-
+            # Tool-call loop: the model may need several rounds (e.g. one lookup per order
+            # when asked for "1158 and 1159"). Tools stay enabled in every round, so the
+            # model is never forced to answer with an unanswerable tool call.
+            max_rounds = 5
+            for round_idx in range(max_rounds):
+                # Normalize to dict for maximum OpenRouter/Groq compatibility
                 messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": tool_output,
+                    "role": "assistant",
+                    "content": choice.content or "",
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            },
+                        }
+                        for tc in choice.tool_calls
+                    ],
                 })
+
+                for tool_call in choice.tool_calls:
+                    fn_name = tool_call.function.name
+                    raw_args = tool_call.function.arguments or "{}"
+                    try:
+                        fn_args = json.loads(raw_args)
+                        if not isinstance(fn_args, dict):
+                            fn_args = {"query": str(fn_args)}
+                    except Exception:
+                        fn_args = {"query": text}
+
+                    print(f"[IMAGE_DEBUG] Calling tool '{fn_name}' with args: {fn_args}")
+                    tool_output, orders = await execute_tool(fn_name, fn_args, base_url)
+                    matched_orders.extend(orders)
+                    print(f"[IMAGE_DEBUG] Tool '{fn_name}' returned {len(orders)} Order objects")
+
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": tool_output,
+                    })
+
+                # On the last round, withhold tools so the model must produce a text answer
+                last_round = round_idx == max_rounds - 1
+                next_resp = await client.chat.completions.create(
+                    model=active_model,
+                    messages=messages,
+                    tools=TOOLS,
+                    tool_choice="none" if last_round else "auto",
+                    temperature=0.2,
+                )
+                choice = next_resp.choices[0].message
+                if not choice.tool_calls:
+                    final_reply = choice.content or ""
+                    break
+
+            # De-duplicate matched orders (same order may be returned by several tools/rounds)
+            unique_orders: dict[str, Order] = {}
+            for o in matched_orders:
+                unique_orders.setdefault(o.order_code, o)
+            matched_orders = list(unique_orders.values())
 
             print(f"[IMAGE_DEBUG] Total matched_orders across all tools: {len(matched_orders)}")
             # Check if exactly one order was matched -> prepare image dispatch
@@ -537,13 +563,8 @@ async def process_owner_query(text: str, sender_phone: str, base_url: str) -> di
             else:
                 print(f"[IMAGE_DEBUG] matched_orders count is {len(matched_orders)} (not 1), skipping single-image dispatch")
 
-            # Get final AI answer
-            second_resp = await client.chat.completions.create(
-                model=active_model,
-                messages=messages,
-                temperature=0.2,
-            )
-            final_reply = second_resp.choices[0].message.content or ""
+            if not final_reply:
+                final_reply = "Order details mil gayi hain, lekin jawab tayyar nahi ho saka. Dobara koshish karein."
 
             print(f"[IMAGE_DEBUG] Returning ai_response with image_url='{image_to_send}'")
             return {
